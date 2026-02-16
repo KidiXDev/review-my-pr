@@ -9,11 +9,13 @@ export interface SavedGroup {
   createdAt: string;
 }
 
-export function useSavedGroups() {
+export function useSavedGroups(search?: string) {
   return useQuery<SavedGroup[]>({
-    queryKey: ["groups", "saved"],
+    queryKey: ["groups", "saved", search],
     queryFn: async () => {
-      const { data } = await api.get("/groups");
+      const { data } = await api.get("/groups", {
+        params: { search },
+      });
       return data;
     },
   });

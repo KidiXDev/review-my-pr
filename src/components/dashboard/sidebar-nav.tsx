@@ -10,7 +10,6 @@ const items = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Groups", href: "/dashboard/groups", icon: Users },
   { title: "Repositories", href: "/dashboard/repos", icon: GitBranch },
-  // { title: "Templates", href: "/dashboard/templates", icon: FileText },
 ];
 
 export function SidebarNav() {

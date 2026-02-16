@@ -11,23 +11,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/common/modal/searchable-select";
 import { toast } from "sonner";
 import { Loader2, Send } from "lucide-react";
-import { useWhatsAppGroups, useSendTestMessage } from "@/hooks/use-whatsapp";
+import { useSavedGroups } from "@/hooks/use-groups";
+import { useSendTestMessage } from "@/hooks/use-whatsapp";
+import { useDebounce } from "use-debounce";
 
 export function TestMessageCard() {
-  const {
-    data: groups = [],
-    isRefetching: fetchingGroups,
-    refetch,
-  } = useWhatsAppGroups(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch] = useDebounce(searchQuery, 500);
+
+  const { data: groups = [], isLoading: fetchingGroups } =
+    useSavedGroups(debouncedSearch);
 
   const [selectedGroup, setSelectedGroup] = useState("");
   const [message, setMessage] = useState(
@@ -35,14 +31,6 @@ export function TestMessageCard() {
   );
 
   const sendMessage = useSendTestMessage();
-
-  const handleFetchGroups = async () => {
-    const { data } = await refetch();
-    if (data && data.length > 0) {
-      setSelectedGroup(data[0].id);
-      toast.success("Groups fetched successfully");
-    }
-  };
 
   const sendTest = () => {
     if (!selectedGroup) return toast.error("Please select a group");
@@ -60,39 +48,20 @@ export function TestMessageCard() {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label>Target Group</Label>
-          <div className="flex gap-2">
-            <Select
-              value={selectedGroup}
-              onValueChange={setSelectedGroup}
-              disabled={fetchingGroups || groups.length === 0}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a group" />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map((g) => (
-                  <SelectItem key={g.id} value={g.id}>
-                    {g.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleFetchGroups}
-              disabled={fetchingGroups}
-            >
-              <Loader2
-                className={`h-4 w-4 ${fetchingGroups ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
-          {groups.length === 0 && !fetchingGroups && (
-            <p className="text-xs text-muted-foreground">
-              Click refresh to load groups
-            </p>
-          )}
+          <SearchableSelect
+            value={selectedGroup}
+            onValueChange={setSelectedGroup}
+            options={groups.map((g) => ({
+              value: g.groupId,
+              label: g.name,
+            }))}
+            placeholder="Select a group"
+            className="flex-1 w-full"
+            disabled={fetchingGroups}
+            onSearchChange={setSearchQuery}
+            searchValue={searchQuery}
+            shouldFilter={false}
+          />
         </div>
 
         <div className="space-y-2">

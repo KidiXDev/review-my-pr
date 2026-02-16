@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -19,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useWhatsAppGroups,
@@ -27,11 +28,19 @@ import {
   WaGroup,
 } from "@/hooks/use-whatsapp";
 import { useSavedGroups } from "@/hooks/use-groups";
+import { useDebounce } from "use-debounce";
 
 export function GroupsClient() {
   const [syncOpen, setSyncOpen] = useState(false);
+  /* Main list state */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch] = useDebounce(searchQuery, 500);
 
-  const { data: savedGroups = [], isLoading: loading } = useSavedGroups();
+  /* Import dialog state */
+  const [importSearchQuery, setImportSearchQuery] = useState("");
+
+  const { data: savedGroups = [], isLoading: loading } =
+    useSavedGroups(debouncedSearch);
   const {
     data: waGroups = [],
     isFetching: syncLoading,
@@ -66,6 +75,15 @@ export function GroupsClient() {
           <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Select Groups to Import</DialogTitle>
+              <div className="relative pt-2">
+                <Search className="absolute left-2 top-4.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search WhatsApp groups..."
+                  value={importSearchQuery}
+                  onChange={(e) => setImportSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
             </DialogHeader>
             <div className="flex-1 overflow-hidden">
               {syncLoading ? (
@@ -75,42 +93,48 @@ export function GroupsClient() {
               ) : (
                 <ScrollArea className="h-[400px] pr-4">
                   <div className="space-y-2">
-                    {waGroups.map((g) => {
-                      const isAlreadySaved = savedGroups.some(
-                        (sg) => sg.groupId === g.id,
-                      );
-                      const isSaving =
-                        saveGroupMutation.isPending &&
-                        saveGroupMutation.variables?.groupId === g.id;
+                    {waGroups
+                      .filter((g) =>
+                        g.name
+                          .toLowerCase()
+                          .includes(importSearchQuery.toLowerCase()),
+                      )
+                      .map((g) => {
+                        const isAlreadySaved = savedGroups.some(
+                          (sg) => sg.groupId === g.id,
+                        );
+                        const isSaving =
+                          saveGroupMutation.isPending &&
+                          saveGroupMutation.variables?.groupId === g.id;
 
-                      return (
-                        <div
-                          key={g.id}
-                          className="flex items-center justify-between p-3 border rounded-lg bg-card text-card-foreground"
-                        >
-                          <div>
-                            <p className="font-medium">{g.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {g.participantCount} participants
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleSaveGroup(g)}
-                            disabled={isAlreadySaved || isSaving}
-                            variant={isAlreadySaved ? "secondary" : "default"}
+                        return (
+                          <div
+                            key={g.id}
+                            className="flex items-center justify-between p-3 border rounded-lg bg-card text-card-foreground"
                           >
-                            {isSaving ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : isAlreadySaved ? (
-                              "Saved"
-                            ) : (
-                              "Import"
-                            )}
-                          </Button>
-                        </div>
-                      );
-                    })}
+                            <div>
+                              <p className="font-medium">{g.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {g.participantCount} participants
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSaveGroup(g)}
+                              disabled={isAlreadySaved || isSaving}
+                              variant={isAlreadySaved ? "secondary" : "default"}
+                            >
+                              {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : isAlreadySaved ? (
+                                "Saved"
+                              ) : (
+                                "Import"
+                              )}
+                            </Button>
+                          </div>
+                        );
+                      })}
                     {waGroups.length === 0 && (
                       <p className="text-center text-muted-foreground p-4">
                         No groups found.
@@ -125,8 +149,17 @@ export function GroupsClient() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Connected Groups</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+          <CardTitle className="text-xl">Connected Groups</CardTitle>
+          <div className="relative w-72">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search connected groups..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

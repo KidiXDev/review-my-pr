@@ -16,12 +16,10 @@ export async function GET() {
 
     const groups = await waClient.getAllGroups();
 
-    // Map to simpler object
     const formattedGroups = groups.map((g) => ({
-      id: g.id._serialized,
-      name: g.name,
-      participantCount: (g as unknown as { participants: unknown[] })
-        .participants.length,
+      id: g.id,
+      name: g.subject,
+      participantCount: g.participants.length,
     }));
 
     return NextResponse.json(formattedGroups);
@@ -44,8 +42,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { groupId, name } = saveGroupSchema.parse(body);
 
-    // TODO: Get real userId from session. For now using a hardcoded or first user.
-    // In a real app we would use auth() from better-auth
     const user = await db.query.user.findFirst();
     if (!user) {
       return NextResponse.json({ error: "No user found" }, { status: 401 });

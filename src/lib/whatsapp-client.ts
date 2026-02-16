@@ -1,73 +1,112 @@
-import { Client, LocalAuth } from "whatsapp-web.js";
+import makeWASocket, {
+  DisconnectReason,
+  useMultiFileAuthState as baileysAuthState,
+  makeCacheableSignalKeyStore,
+  type WASocket,
+  type ConnectionState,
+  type UserFacingSocketConfig,
+  type GroupMetadata,
+  type AuthenticationState,
+} from "@whiskeysockets/baileys";
+import pino from "pino";
+import { Boom } from "@hapi/boom";
 
 declare global {
   var whatsappClient: WhatsAppClient | undefined;
 }
 
 class WhatsAppClient {
-  private client: Client;
+  private socket: WASocket | null = null;
   private qrCode: string | null = null;
   private isConnected: boolean = false;
   private isReady: boolean = false;
+  private authState: AuthenticationState | null = null;
+  private saveCreds: (() => Promise<void>) | null = null;
 
   constructor() {
-    console.log("Initializing WhatsApp Client...");
-    this.client = new Client({
-      authStrategy: new LocalAuth({
-        clientId: "whatsapp-bot",
-        dataPath: "./.wwebjs_auth",
-      }),
-      puppeteer: {
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      },
-    });
-
     this.initialize();
   }
 
-  private initialize() {
-    this.client.on("qr", (qr) => {
-      console.log("QR Code received", qr);
-      this.qrCode = qr;
-      this.isConnected = false;
-      this.isReady = false;
-    });
-
-    this.client.on("ready", () => {
-      console.log("WhatsApp Client is ready!");
-      this.isConnected = true;
-      this.isReady = true;
-      this.qrCode = null;
-    });
-
-    this.client.on("authenticated", () => {
-      console.log("WhatsApp Client authenticated");
-      this.isConnected = true;
-    });
-
-    this.client.on("auth_failure", (msg) => {
-      console.error("WhatsApp Authentication failure", msg);
-      this.isConnected = false;
-      this.isReady = false;
-    });
-
-    this.client.on("disconnected", (reason) => {
-      console.log("WhatsApp Client disconnected", reason);
-      this.isConnected = false;
-      this.isReady = false;
-      // Re-initialize logic could go here if needed, but often client handles reconnection or we restart
-    });
+  private async initialize() {
+    console.log("Initializing WhatsApp Client with Baileys...");
 
     try {
-      this.client.initialize();
+      const { state, saveCreds } = await baileysAuthState("./.baileys_auth");
+      this.authState = state;
+      this.saveCreds = saveCreds;
+
+      this.connectToWhatsApp();
     } catch (error) {
-      console.error("Failed to initialize WhatsApp client:", error);
+      console.error("Failed to initialize auth state:", error);
     }
   }
 
+  private async connectToWhatsApp() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const logger: any = pino({ level: "silent" });
+
+    if (!this.authState || !this.saveCreds) {
+      console.error("Auth state not initialized");
+      return;
+    }
+
+    const config: UserFacingSocketConfig = {
+      logger,
+      auth: {
+        creds: this.authState.creds,
+        keys: makeCacheableSignalKeyStore(this.authState.keys, logger),
+      },
+      generateHighQualityLinkPreview: true,
+    };
+
+    this.socket = makeWASocket(config);
+
+    if (!this.socket) {
+      console.error("Failed to create socket");
+      return;
+    }
+
+    this.socket.ev.on("creds.update", this.saveCreds);
+
+    this.socket.ev.on(
+      "connection.update",
+      (update: Partial<ConnectionState>) => {
+        const { connection, lastDisconnect, qr } = update;
+
+        if (qr) {
+          console.log("QR Code received");
+          this.qrCode = qr;
+        }
+
+        if (connection === "close") {
+          const error = lastDisconnect?.error as Boom | undefined;
+          const shouldReconnect =
+            error?.output?.statusCode !== DisconnectReason.loggedOut;
+
+          console.log(
+            "connection closed due to ",
+            error,
+            ", reconnecting ",
+            shouldReconnect,
+          );
+          this.isConnected = false;
+          this.isReady = false;
+          // reconnect if not logged out
+          if (shouldReconnect) {
+            this.connectToWhatsApp();
+          }
+        } else if (connection === "open") {
+          console.log("opened connection");
+          this.isConnected = true;
+          this.isReady = true;
+          this.qrCode = null;
+        }
+      },
+    );
+  }
+
   public getClient() {
-    return this.client;
+    return this.socket;
   }
 
   public getLatestQR() {
@@ -77,24 +116,27 @@ class WhatsAppClient {
   public getStatus() {
     return {
       isConnected: this.isConnected,
-      isReady: this.isReady,
+      isReady: this.isReady && !!this.socket,
     };
   }
 
-  public async getAllGroups() {
-    if (!this.isReady) {
-      throw new Error("WhatsApp client is not ready");
+  public async getAllGroups(): Promise<GroupMetadata[]> {
+    if (!this.socket) {
+      throw new Error("WhatsApp client is not initialized");
     }
-    const chats = await this.client.getChats();
-    return chats.filter((chat) => chat.isGroup);
+
+    // In Baileys, we fetch all groups using groupFetchAllParticipating
+    const groups = await this.socket.groupFetchAllParticipating();
+    return Object.values(groups);
   }
 
   public async sendGroupMessage(groupId: string, message: string) {
-    if (!this.isReady) {
-      throw new Error("WhatsApp client is not ready");
+    if (!this.socket) {
+      throw new Error("WhatsApp client is not initialized");
     }
+
     try {
-      await this.client.sendMessage(groupId, message);
+      await this.socket.sendMessage(groupId, { text: message });
       return true;
     } catch (error) {
       console.error(`Failed to send message to group ${groupId}:`, error);
