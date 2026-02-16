@@ -82,3 +82,40 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
   }
 }
+
+const updateRepoSchema = z.object({
+  id: z.string(),
+  allowedEvents: z.array(z.string()).optional(),
+  groupIds: z.array(z.string()).optional(),
+  messageTemplate: z.string().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, allowedEvents, groupIds, messageTemplate, isActive } =
+      updateRepoSchema.parse(body);
+
+    await db
+      .update(githubRepositories)
+      .set({
+        allowedEvents,
+        groupIds,
+        messageTemplate,
+        isActive,
+      })
+      .where(eq(githubRepositories.id, id));
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: (error as z.ZodError).issues },
+        { status: 400 },
+      );
+    }
+    console.error("Failed to update repo:", error);
+    return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+  }
+}

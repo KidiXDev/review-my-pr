@@ -8,6 +8,13 @@
       "when": 1771238391223,
       "tag": "0000_mysterious_amazoness",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771242248530,
+      "tag": "0001_young_wallflower",
+      "breakpoints": true
     }
   ]
 }

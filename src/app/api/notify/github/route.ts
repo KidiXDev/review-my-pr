@@ -39,41 +39,74 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Get Active Groups
-    const groups = await db.query.whatsappGroups.findMany({
-      where: eq(whatsappGroups.isActive, true),
-    });
-
-    if (groups.length === 0) {
-      return NextResponse.json({ message: "No active WhatsApp groups found" });
+    // 2. Event Allowlist Check
+    const allowedEvents = repository.allowedEvents;
+    if (
+      allowedEvents &&
+      allowedEvents.length > 0 &&
+      !allowedEvents.includes(event)
+    ) {
+      console.log(`Event ${event} not in allowlist for ${repo}`);
+      return NextResponse.json({ message: "Event ignored by allowlist" });
     }
 
-    // 3. Get Template (Optional)
-    const template = await db.query.notificationTemplates.findFirst({
-      where: and(
-        eq(notificationTemplates.eventType, event),
-        eq(notificationTemplates.isActive, true),
-      ),
-    });
+    // 3. Resolve Target Groups
+    let targetGroups: string[] = [];
+    if (repository.groupIds && repository.groupIds.length > 0) {
+      targetGroups = repository.groupIds;
+    } else {
+      // Fallback to all active groups if no specific groups configured (Legacy behavior)
+      const allGroups = await db.query.whatsappGroups.findMany({
+        where: eq(whatsappGroups.isActive, true),
+      });
+      targetGroups = allGroups.map(
+        (g: typeof whatsappGroups.$inferSelect) => g.groupId,
+      );
+    }
 
-    // 4. Construct Message
+    if (targetGroups.length === 0) {
+      return NextResponse.json({ message: "No target WhatsApp groups found" });
+    }
+
+    // 4. Resolve Template
+    let templateText = repository.messageTemplate;
+
+    if (!templateText) {
+      // Fallback to global template
+      const globalTemplate = await db.query.notificationTemplates.findFirst({
+        where: and(
+          eq(notificationTemplates.eventType, event),
+          eq(notificationTemplates.isActive, true),
+        ),
+      });
+      if (globalTemplate) {
+        templateText = globalTemplate.templateText;
+      }
+    }
+
+    // 5. Construct Message with Macros
     let message = "";
-    if (template) {
-      message = template.templateText
-        .replace("{{repo}}", repo)
-        .replace("{{title}}", title)
-        .replace("{{author}}", author)
-        .replace("{{url}}", url)
-        .replace("{{event}}", event);
+    if (templateText) {
+      message = templateText
+        .replace(/{{repo}}/g, repo)
+        .replace(/{{title}}/g, title)
+        .replace(/{{author}}/g, author)
+        .replace(/{{url}}/g, url)
+        .replace(/{{event}}/g, event)
+        // New macros style {pr.field}
+        .replace(/{pr\.repo}/g, repo)
+        .replace(/{pr\.title}/g, title)
+        .replace(/{pr\.author}/g, author)
+        .replace(/{pr\.url}/g, url)
+        .replace(/{pr\.event}/g, event);
     } else {
       // Default fallback
       message = `📢 *${repo}*: ${title}\n\n👤 ${author}\n🔗 ${url}`;
     }
 
-    // 5. Send to all groups
+    // 6. Send to resolved groups
     const status = waClient.getStatus();
     if (!status.isReady) {
-      // This is critical, we might want to return 503 but user might retry
       console.warn("WhatsApp client not ready, cannot send notification");
       return NextResponse.json(
         { error: "WhatsApp client not ready" },
@@ -81,9 +114,13 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log(
+      `Sending notification for ${repo} to ${targetGroups.length} groups`,
+    );
+
     const results = await Promise.allSettled(
-      groups.map((g: typeof whatsappGroups.$inferSelect) =>
-        waClient.sendGroupMessage(g.groupId, message),
+      targetGroups.map((groupId) =>
+        waClient.sendGroupMessage(groupId, message),
       ),
     );
 

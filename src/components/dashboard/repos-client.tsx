@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -28,94 +28,50 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2, Copy } from "lucide-react";
+import { Loader2, Plus, Trash2, Copy, Settings } from "lucide-react";
 import { toast } from "sonner";
-
-interface Repository {
-  id: string;
-  repoName: string;
-  apiToken: string;
-  isActive: boolean;
-  createdAt: string;
-}
+import { RepoSettingsDialog } from "./repo-settings-dialog";
+import {
+  useRepos,
+  useAddRepo,
+  useDeleteRepo,
+  Repository,
+} from "@/hooks/use-repos";
 
 export function ReposClient() {
-  const [repos, setRepos] = useState<Repository[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: repos = [], isLoading: loading } = useRepos();
+  const addRepoMutation = useAddRepo();
+  const deleteRepoMutation = useDeleteRepo();
+
   const [addOpen, setAddOpen] = useState(false);
   const [newRepoName, setNewRepoName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
 
-  const fetchRepos = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/repos");
-      if (res.ok) {
-        setRepos(await res.json());
-      }
-    } catch (err) {
-      toast.error("Failed to fetch repositories");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Settings Dialog
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
 
-  useEffect(() => {
-    fetchRepos();
-  }, []);
-
-  const addRepo = async () => {
-    if (!newRepoName.includes("/"))
+  const handleAddRepo = async () => {
+    if (!newRepoName.includes("/")) {
       return toast.error("Please use format: owner/repo");
-    setSaving(true);
-    try {
-      const res = await fetch("/api/repos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repoName: newRepoName }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Repository added");
-        setAddOpen(false);
-        setNewRepoName("");
-        fetchRepos();
-      } else {
-        toast.error(data.error || "Failed to add repository");
-      }
-    } catch (err) {
-      toast.error("Failed to add repository");
-    } finally {
-      setSaving(false);
     }
+    await addRepoMutation.mutateAsync(newRepoName);
+    setAddOpen(false);
+    setNewRepoName("");
   };
 
-  const deleteRepo = async (id: string) => {
+  const handleDeleteRepo = async (id: string) => {
     if (!confirm("Are you sure you want to delete this repository?")) return;
-    setDeleteLoading(id);
-    try {
-      const res = await fetch("/api/repos", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      if (res.ok) {
-        toast.success("Repository deleted");
-        setRepos(repos.filter((r) => r.id !== id));
-      } else {
-        toast.error("Failed to delete repository");
-      }
-    } catch (err) {
-      toast.error("Failed to delete repository");
-    } finally {
-      setDeleteLoading(null);
-    }
+    await deleteRepoMutation.mutateAsync(id);
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
+  };
+
+  const openSettings = (repo: Repository) => {
+    setSelectedRepo(repo);
+    setSettingsOpen(true);
   };
 
   return (
@@ -149,8 +105,11 @@ export function ReposClient() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={addRepo} disabled={saving || !newRepoName}>
-                {saving ? (
+              <Button
+                onClick={handleAddRepo}
+                disabled={addRepoMutation.isPending || !newRepoName}
+              >
+                {addRepoMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 Add Repository
@@ -228,18 +187,33 @@ export function ReposClient() {
                       {new Date(repo.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteRepo(repo.id)}
-                        disabled={deleteLoading === repo.id}
-                      >
-                        {deleteLoading === repo.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        )}
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openSettings(repo)}
+                          title="Settings"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteRepo(repo.id)}
+                          disabled={
+                            deleteRepoMutation.isPending &&
+                            deleteRepoMutation.variables === repo.id
+                          }
+                          title="Delete"
+                        >
+                          {deleteRepoMutation.isPending &&
+                          deleteRepoMutation.variables === repo.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -274,6 +248,14 @@ export function ReposClient() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {selectedRepo && (
+        <RepoSettingsDialog
+          repo={selectedRepo}
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+        />
       )}
     </div>
   );

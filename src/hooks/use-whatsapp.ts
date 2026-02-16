@@ -1,11 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 export interface WhatsAppStatus {
   qr?: string | null;
   isConnected: boolean;
   isReady: boolean;
   error?: string;
+}
+
+export interface WaGroup {
+  id: string;
+  name: string;
+  participantCount: number;
 }
 
 export function useWhatsAppStatus() {
@@ -22,6 +30,64 @@ export function useWhatsAppStatus() {
         return 5000; // 5 seconds
       }
       return 30000; // 30 seconds if ready
+    },
+  });
+}
+
+export function useWhatsAppGroups(enabled = true) {
+  return useQuery<WaGroup[]>({
+    queryKey: ["whatsapp", "groups"],
+    queryFn: async () => {
+      const { data } = await api.get("/whatsapp/groups");
+      return data;
+    },
+    enabled,
+  });
+}
+
+export function useSendTestMessage() {
+  return useMutation({
+    mutationFn: async ({
+      groupId,
+      message,
+    }: {
+      groupId: string;
+      message: string;
+    }) => {
+      const { data } = await api.post("/whatsapp/send-test", {
+        groupId,
+        message,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Message sent!");
+    },
+    onError: (error: AxiosError<{ error: string }>) => {
+      toast.error(error.response?.data?.error || "Failed to send message");
+    },
+  });
+}
+
+export function useSaveWhatsAppGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      groupId,
+      name,
+    }: {
+      groupId: string;
+      name: string;
+    }) => {
+      const { data } = await api.post("/whatsapp/groups", { groupId, name });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Group saved");
+      queryClient.invalidateQueries({ queryKey: ["groups", "saved"] });
+    },
+    onError: (error: AxiosError<{ error: string }>) => {
+      toast.error(error.response?.data?.error || "Failed to save group");
     },
   });
 }

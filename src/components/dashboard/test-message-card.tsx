@@ -20,60 +20,33 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Send } from "lucide-react";
-
-interface Group {
-  id: string;
-  name: string;
-}
+import { useWhatsAppGroups, useSendTestMessage } from "@/hooks/use-whatsapp";
 
 export function TestMessageCard() {
-  const [groups, setGroups] = useState<Group[]>([]);
+  const {
+    data: groups = [],
+    isRefetching: fetchingGroups,
+    refetch,
+  } = useWhatsAppGroups(false);
+
   const [selectedGroup, setSelectedGroup] = useState("");
   const [message, setMessage] = useState(
     "This is a test notification from Review My PR bot.",
   );
-  const [loading, setLoading] = useState(false);
-  const [fetchingGroups, setFetchingGroups] = useState(false);
 
-  const fetchGroups = async () => {
-    setFetchingGroups(true);
-    try {
-      const res = await fetch("/api/whatsapp/groups");
-      const data = await res.json();
-      if (res.ok) {
-        setGroups(data);
-        if (data.length > 0) setSelectedGroup(data[0].id);
-        toast.success("Groups fetched successfully");
-      } else {
-        toast.error(data.error || "Failed to fetch groups");
-      }
-    } catch (err) {
-      toast.error("Failed to fetch groups");
-    } finally {
-      setFetchingGroups(false);
+  const sendMessage = useSendTestMessage();
+
+  const handleFetchGroups = async () => {
+    const { data } = await refetch();
+    if (data && data.length > 0) {
+      setSelectedGroup(data[0].id);
+      toast.success("Groups fetched successfully");
     }
   };
 
-  const sendTest = async () => {
+  const sendTest = () => {
     if (!selectedGroup) return toast.error("Please select a group");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/whatsapp/send-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ groupId: selectedGroup, message }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Message sent!");
-      } else {
-        toast.error(data.error || "Failed to send message");
-      }
-    } catch (err) {
-      toast.error("Failed to send message");
-    } finally {
-      setLoading(false);
-    }
+    sendMessage.mutate({ groupId: selectedGroup, message });
   };
 
   return (
@@ -107,7 +80,7 @@ export function TestMessageCard() {
             <Button
               variant="outline"
               size="icon"
-              onClick={fetchGroups}
+              onClick={handleFetchGroups}
               disabled={fetchingGroups}
             >
               <Loader2
@@ -130,9 +103,9 @@ export function TestMessageCard() {
         <Button
           className="w-full"
           onClick={sendTest}
-          disabled={loading || !selectedGroup}
+          disabled={sendMessage.isPending || !selectedGroup}
         >
-          {loading ? (
+          {sendMessage.isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Send className="mr-2 h-4 w-4" />

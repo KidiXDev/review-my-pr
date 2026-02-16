@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,87 +19,37 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, RefreshCw, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2, RefreshCw } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface SavedGroup {
-  id: string;
-  name: string;
-  groupId: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface WaGroup {
-  id: string;
-  name: string;
-  participantCount: number;
-}
+import {
+  useWhatsAppGroups,
+  useSaveWhatsAppGroup,
+  WaGroup,
+} from "@/hooks/use-whatsapp";
+import { useSavedGroups } from "@/hooks/use-groups";
 
 export function GroupsClient() {
-  const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([]);
-  const [loading, setLoading] = useState(true);
   const [syncOpen, setSyncOpen] = useState(false);
-  const [waGroups, setWaGroups] = useState<WaGroup[]>([]);
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [savingId, setSavingId] = useState<string | null>(null);
 
-  const fetchSavedGroups = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/groups");
-      if (res.ok) {
-        setSavedGroups(await res.json());
-      }
-    } catch (err) {
-      toast.error("Failed to fetch saved groups");
-    } finally {
-      setLoading(false);
-    }
+  const { data: savedGroups = [], isLoading: loading } = useSavedGroups();
+  const {
+    data: waGroups = [],
+    isFetching: syncLoading,
+    refetch: fetchWaGroups,
+  } = useWhatsAppGroups(false);
+
+  const saveGroupMutation = useSaveWhatsAppGroup();
+
+  const handleSyncClick = () => {
+    fetchWaGroups();
   };
 
-  useEffect(() => {
-    fetchSavedGroups();
-  }, []);
-
-  const fetchWaGroups = async () => {
-    setSyncLoading(true);
-    try {
-      const res = await fetch("/api/whatsapp/groups");
-      const data = await res.json();
-      if (res.ok) {
-        setWaGroups(data);
-      } else {
-        toast.error(data.error || "Failed to fetch WhatsApp groups");
-      }
-    } catch (err) {
-      toast.error("Failed to fetch WhatsApp groups");
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
-  const saveGroup = async (group: WaGroup) => {
-    setSavingId(group.id);
-    try {
-      const res = await fetch("/api/whatsapp/groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ groupId: group.id, name: group.name }),
-      });
-      if (res.ok) {
-        toast.success("Group saved");
-        setSyncOpen(false);
-        fetchSavedGroups();
-      } else {
-        toast.error("Failed to save group");
-      }
-    } catch (err) {
-      toast.error("Failed to save group");
-    } finally {
-      setSavingId(null);
-    }
+  const handleSaveGroup = async (group: WaGroup) => {
+    await saveGroupMutation.mutateAsync({
+      groupId: group.id,
+      name: group.name,
+    });
+    setSyncOpen(false);
   };
 
   return (
@@ -108,7 +58,7 @@ export function GroupsClient() {
         <h2 className="text-2xl font-bold tracking-tight">WhatsApp Groups</h2>
         <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
           <DialogTrigger asChild>
-            <Button onClick={fetchWaGroups}>
+            <Button onClick={handleSyncClick}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Sync from WhatsApp
             </Button>
@@ -129,6 +79,10 @@ export function GroupsClient() {
                       const isAlreadySaved = savedGroups.some(
                         (sg) => sg.groupId === g.id,
                       );
+                      const isSaving =
+                        saveGroupMutation.isPending &&
+                        saveGroupMutation.variables?.groupId === g.id;
+
                       return (
                         <div
                           key={g.id}
@@ -142,11 +96,11 @@ export function GroupsClient() {
                           </div>
                           <Button
                             size="sm"
-                            onClick={() => saveGroup(g)}
-                            disabled={isAlreadySaved || savingId === g.id}
+                            onClick={() => handleSaveGroup(g)}
+                            disabled={isAlreadySaved || isSaving}
                             variant={isAlreadySaved ? "secondary" : "default"}
                           >
-                            {savingId === g.id ? (
+                            {isSaving ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : isAlreadySaved ? (
                               "Saved"
@@ -182,20 +136,19 @@ export function GroupsClient() {
                 <TableHead>Group ID</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created At</TableHead>
-                {/* <TableHead className="text-right">Actions</TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={4} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : savedGroups.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={4}
                     className="text-center py-8 text-muted-foreground"
                   >
                     No groups saved. Sync from WhatsApp to get started.
@@ -220,9 +173,6 @@ export function GroupsClient() {
                     <TableCell>
                       {new Date(group.createdAt).toLocaleDateString()}
                     </TableCell>
-                    {/* <TableCell className="text-right">
-                       <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4" /></Button>
-                    </TableCell> */}
                   </TableRow>
                 ))
               )}
