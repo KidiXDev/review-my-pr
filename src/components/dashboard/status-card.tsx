@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useWhatsAppStatus } from "@/hooks/use-whatsapp";
 import {
   Card,
   CardContent,
@@ -14,36 +14,9 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 export function StatusCard() {
-  const [status, setStatus] = useState<{
-    isConnected: boolean;
-    isReady: boolean;
-    qr: string | null;
-  } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: status, isLoading, refetch, isFetching } = useWhatsAppStatus();
 
-  const fetchStatus = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/whatsapp/qr");
-      const data = await res.json();
-      setStatus(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStatus();
-    // Poll every 5 seconds if not connected
-    const interval = setInterval(() => {
-      fetchStatus();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  if (!status) {
+  if (isLoading || !status) {
     return (
       <Card>
         <CardHeader>
@@ -56,6 +29,8 @@ export function StatusCard() {
     );
   }
 
+  const isConnected = status.isConnected;
+
   return (
     <Card>
       <CardHeader>
@@ -64,10 +39,12 @@ export function StatusCard() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={fetchStatus}
-            disabled={loading}
+            onClick={() => refetch()}
+            disabled={isFetching}
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
         <CardDescription>
@@ -77,7 +54,7 @@ export function StatusCard() {
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Status:</span>
-          {status.isConnected ? (
+          {isConnected ? (
             <Badge variant="default" className="bg-green-600">
               Connected
             </Badge>
@@ -86,16 +63,16 @@ export function StatusCard() {
           )}
         </div>
 
-        {!status.isConnected && status.qr && (
+        {!isConnected && status.qr && (
           <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-white">
             <QRCodeSVG value={status.qr} size={256} />
-            <p className="mt-2 text-xs text-muted-foreground text-center text-black">
+            <p className="mt-2 text-xs text-muted-foreground text-center">
               Scan with WhatsApp (Linked Devices)
             </p>
           </div>
         )}
 
-        {!status.isConnected && !status.qr && (
+        {!isConnected && !status.qr && (
           <p className="text-sm text-yellow-500">
             Initializing client... please wait.
           </p>

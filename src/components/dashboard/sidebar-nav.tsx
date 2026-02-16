@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, GitBranch, FileText } from "lucide-react";
+import { LayoutDashboard, Users, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const items = [
@@ -17,7 +17,7 @@ export function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="grid gap-1 px-2 group-[[data-collapsed=true]]:justify-center group-[[data-collapsed=true]]:px-2">
+    <nav className="grid gap-1 px-2 group-data-[collapsed=true]:justify-center group-data-[collapsed=true]:px-2">
       {items.map((item, index) => {
         const isActive = pathname === item.href;
         return (

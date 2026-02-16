@@ -45,6 +45,55 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-accent-glow: color-mix(
+    in oklch,
+    var(--color-accent) 20%,
+    transparent
+  );
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      opacity: 0.5;
+      filter: blur(40px);
+    }
+    50% {
+      opacity: 0.8;
+      filter: blur(60px);
+    }
+  }
+
+  @keyframes typing {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+
+  @keyframes blink {
+    50% {
+      border-color: transparent;
+    }
+  }
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
+  --animate-typing: typing 3.5s steps(40, end), blink 0.75s step-end infinite;
 }
 
 :root {
@@ -119,10 +168,37 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-    @apply bg-background text-foreground;
+  }
+  button:not([disabled]),
+  [role="button"]:not([disabled]) {
+    @apply cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/3 backdrop-blur-xl border border-white/8;
+  }
+
+  .glass-darker {
+    @apply bg-black/40 backdrop-blur-2xl border border-white/5;
+  }
+
+  .surface-glow {
+    @apply relative overflow-hidden;
+    &::before {
+      content: "";
+      @apply absolute inset-0 -z-10 bg-linear-to-tr from-accent/10 via-transparent to-transparent opacity-0 transition-opacity duration-500;
+    }
+    &:hover::before {
+      @apply opacity-100;
+    }
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-linear-to-b from-foreground to-foreground/50;
   }
 }

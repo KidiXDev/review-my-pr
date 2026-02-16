@@ -10,7 +10,7 @@ export async function GET() {
       .from(whatsappGroups)
       .orderBy(desc(whatsappGroups.createdAt));
     return NextResponse.json(groups);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch groups" },
       { status: 500 },
