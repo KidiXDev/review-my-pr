@@ -158,13 +158,48 @@ export class WhatsAppClient {
     return Object.values(groups);
   }
 
+  public async getGroupParticipants(groupId: string) {
+    if (!this.socket) {
+      throw new Error("WhatsApp client is not initialized");
+    }
+
+    const metadata = await this.socket.groupMetadata(groupId);
+    return metadata.participants.map((p) => ({
+      id: p.id,
+      lid: p.lid,
+      phoneNumber: p.phoneNumber,
+      name: p.name ?? null,
+      notify: p.notify ?? null,
+      verifiedName: p.verifiedName ?? null,
+    }));
+  }
+
+  public async resolveLidToPhone(lid: string): Promise<string | null> {
+    if (!this.socket) return null;
+    try {
+      return await this.socket.signalRepository.lidMapping.getPNForLID(lid);
+    } catch {
+      return null;
+    }
+  }
+
   public async sendGroupMessage(groupId: string, message: string) {
     if (!this.socket) {
       throw new Error("WhatsApp client is not initialized");
     }
 
     try {
-      await this.socket.sendMessage(groupId, { text: message });
+      const mentionPattern = /@(\d+)/g;
+      const mentions: string[] = [];
+      let match;
+      while ((match = mentionPattern.exec(message)) !== null) {
+        mentions.push(`${match[1]}@s.whatsapp.net`);
+      }
+
+      await this.socket.sendMessage(groupId, {
+        text: message,
+        mentions: mentions.length > 0 ? mentions : undefined,
+      });
       return true;
     } catch (error) {
       console.error(

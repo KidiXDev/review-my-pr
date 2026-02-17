@@ -19,8 +19,9 @@ import {
   InputGroup,
   InputGroupAddon,
   InputGroupText,
-  InputGroupTextarea,
 } from "@/components/ui/input-group";
+import { MentionTextarea } from "@/components/dashboard/mention-textarea";
+import { useGroupParticipants } from "@/hooks/use-group-participants";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -66,6 +67,9 @@ export function RepoSettingsDialog({
   const updateSettingsMutation = useUpdateRepoSettings();
 
   const [groupSearch, setGroupSearch] = useState("");
+  const [trackedGroupIds, setTrackedGroupIds] = useState<string[]>(
+    repo.groupIds || [],
+  );
 
   const form = useForm({
     defaultValues: {
@@ -92,9 +96,20 @@ export function RepoSettingsDialog({
     },
   });
 
+  const savedGroupIdsForParticipants = useMemo(() => {
+    return groups
+      .filter((g) => trackedGroupIds.includes(g.groupId))
+      .map((g) => g.groupId);
+  }, [groups, trackedGroupIds]);
+
+  const { data: participants = [] } = useGroupParticipants(
+    savedGroupIdsForParticipants,
+  );
+
   useEffect(() => {
     if (open) {
       form.reset();
+      setTrackedGroupIds(repo.groupIds || []);
     }
   }, [open, repo, form]);
 
@@ -283,16 +298,19 @@ export function RepoSettingsDialog({
                                 )}
                                 onCheckedChange={(checked) => {
                                   if (checked) {
-                                    field.handleChange([
+                                    const next = [
                                       ...(field.state.value || []),
                                       group.groupId,
-                                    ]);
+                                    ];
+                                    field.handleChange(next);
+                                    setTrackedGroupIds(next);
                                   } else {
-                                    field.handleChange(
+                                    const next =
                                       field.state.value?.filter(
                                         (value) => value !== group.groupId,
-                                      ),
-                                    );
+                                      ) || [];
+                                    field.handleChange(next);
+                                    setTrackedGroupIds(next);
                                   }
                                 }}
                               />
@@ -341,14 +359,15 @@ export function RepoSettingsDialog({
                   </div>
                   <div className="space-y-3">
                     <InputGroup>
-                      <InputGroupTextarea
+                      <MentionTextarea
                         id={field.name}
                         name={field.name}
                         value={field.state.value || ""}
                         onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="*{pr.repo}*: {pr.title}..."
-                        className="font-mono max-h-32 text-sm h-32 bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/50 dark:border-zinc-800/50 focus-visible:ring-primary/20"
+                        onChange={(val) => field.handleChange(val)}
+                        participants={participants}
+                        placeholder="*{pr.repo}*: {pr.title}... Type @ to mention"
+                        className="font-mono text-sm h-32 max-h-32"
                         aria-invalid={isInvalid}
                       />
                       <InputGroupAddon align="block-end">
@@ -369,6 +388,7 @@ export function RepoSettingsDialog({
                           { m: "{pr.author}", d: "Author" },
                           { m: "{pr.url}", d: "URL" },
                           { m: "{pr.event}", d: "Event" },
+                          { m: "@number", d: "Mention" },
                         ].map((macro) => (
                           <div key={macro.m} className="flex flex-col gap-0.5">
                             <code className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded w-fit">
