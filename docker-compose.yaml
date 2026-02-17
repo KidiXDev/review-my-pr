@@ -22,7 +22,7 @@ services:
       redis:
         condition: service_healthy
       db-migrate:
-        condition: service_completed_successfully
+        condition: service_healthy
     volumes:
       - whatsapp_auth_data:/app/.baileys_auth
     healthcheck:
@@ -40,7 +40,13 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-review_my_pr}?sslmode=disable
       - NODE_ENV=production
-    command: pnpm db:migrate
+    command: sh -c "pnpm db:migrate && touch /tmp/migrated && tail -f /dev/null"
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /tmp/migrated ] || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
     depends_on:
       db:
         condition: service_healthy
