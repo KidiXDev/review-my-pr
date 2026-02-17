@@ -54,6 +54,19 @@ export async function POST(request: Request) {
       isActive: true,
     });
 
+    // Trigger internal notification
+    try {
+      const { triggerNotification } = await import("@/actions/notifications");
+      await triggerNotification(user.id, {
+        type: "group:added",
+        title: "Group Linked",
+        message: `Successfully linked WhatsApp group "${name}".`,
+        metadata: { groupId, name },
+      });
+    } catch (err) {
+      console.error("Failed to trigger group:added notification:", err);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {

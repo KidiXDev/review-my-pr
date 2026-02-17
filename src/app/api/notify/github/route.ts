@@ -137,6 +137,29 @@ export async function POST(request: Request) {
       groupsFailed: failures,
     });
 
+    // 7. Trigger Internal Notification
+    try {
+      const { triggerNotification } = await import("@/actions/notifications");
+      await triggerNotification(repository.userId, {
+        type: `github:${event}`,
+        title: `GitHub: ${repo}`,
+        message: `${author} ${event.replace("_", " ")}: ${title}`,
+        link: url,
+        metadata: {
+          repo,
+          event,
+          author,
+          title,
+        },
+      });
+    } catch (notificationError) {
+      console.error(
+        "Failed to trigger internal notification:",
+        notificationError,
+      );
+      // Don't fail the webhook because of internal notification failure
+    }
+
     return NextResponse.json({
       success: true,
       sentTo: successes,

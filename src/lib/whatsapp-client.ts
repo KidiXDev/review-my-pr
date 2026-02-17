@@ -100,6 +100,24 @@ class WhatsAppClient {
           this.isConnected = true;
           this.isReady = true;
           this.qrCode = null;
+
+          // Trigger internal notification for the user
+          import("@/index").then(async ({ db }) => {
+            try {
+              const user = await db.query.user.findFirst();
+              if (user) {
+                const { triggerNotification } =
+                  await import("@/actions/notifications");
+                await triggerNotification(user.id, {
+                  type: "whatsapp:connected",
+                  title: "WhatsApp Connected",
+                  message: "Your WhatsApp session is now active and ready.",
+                });
+              }
+            } catch (err) {
+              console.error("Failed to notify user about WA connection:", err);
+            }
+          });
         }
       },
     );

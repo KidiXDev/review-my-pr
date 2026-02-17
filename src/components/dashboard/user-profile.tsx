@@ -13,16 +13,28 @@ import {
 import { signOut, useSession } from "@/lib/auth-client";
 import { LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAlert } from "@/components/providers/alert-provider";
 
 export function UserProfile() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { confirm } = useAlert();
 
   const handleSignOut = async () => {
+    const ok = await confirm({
+      title: "Logout",
+      description:
+        "Are you sure you want to log out? You will need to sign in again to access your dashboard.",
+      confirmText: "Log out",
+      variant: "destructive",
+    });
+
+    if (!ok) return;
+
     await signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/login"); // or wherever you want to redirect
+          router.push("/login");
         },
       },
     });

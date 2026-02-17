@@ -31,6 +31,7 @@ import {
 import { Loader2, Plus, Trash2, Copy, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { RepoSettingsDialog } from "./repo-settings-dialog";
+import { useAlert } from "@/components/providers/alert-provider";
 import {
   useRepos,
   useAddRepo,
@@ -44,6 +45,7 @@ export function ReposClient() {
   const { data: repos = [], isLoading: loading } = useRepos();
   const addRepoMutation = useAddRepo();
   const deleteRepoMutation = useDeleteRepo();
+  const { confirm } = useAlert();
 
   const [addOpen, setAddOpen] = useState(false);
   const [newRepoName, setNewRepoName] = useState("");
@@ -62,7 +64,15 @@ export function ReposClient() {
   };
 
   const handleDeleteRepo = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this repository?")) return;
+    const ok = await confirm({
+      title: "Delete Repository",
+      description:
+        "Are you sure you want to delete this repository? This action cannot be undone and will stop all notifications for this repository.",
+      confirmText: "Delete",
+      variant: "destructive",
+    });
+
+    if (!ok) return;
     await deleteRepoMutation.mutateAsync(id);
   };
 

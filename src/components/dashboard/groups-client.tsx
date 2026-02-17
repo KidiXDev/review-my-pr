@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Loader2, RefreshCw, Search } from "lucide-react";
+import { Loader2, PlusIcon, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useWhatsAppGroups,
@@ -38,11 +38,9 @@ import {
 
 export function GroupsClient() {
   const [syncOpen, setSyncOpen] = useState(false);
-  /* Main list state */
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch] = useDebounce(searchQuery, 500);
 
-  /* Import dialog state */
   const [importSearchQuery, setImportSearchQuery] = useState("");
 
   const { data: savedGroups = [], isLoading: loading } =
@@ -75,9 +73,9 @@ export function GroupsClient() {
       >
         <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleSyncClick} variant="outline">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Sync from WhatsApp
+            <Button onClick={handleSyncClick} variant="default">
+              <PlusIcon className="h-4 w-4" />
+              Add Group
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
