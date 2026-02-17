@@ -4,8 +4,6 @@
 
 > **Note**: This project is currently in early development. Some features may not yet be fully implemented and may display only the user interface without underlying functionality.
 
----
-
 ## Key Features
 
 - **Instant Notifications**: Get notified on WhatsApp the moment a PR is opened, reviewed, or merged.
@@ -14,8 +12,6 @@
 - **Self-Hostable**: Full control over your data. Deploy it on your own infrastructure.
 - **Secure**: Uses anonymous tokens and follows security best practices to protect your repository data.
 - **Multi-Tenant**: Built as a SaaS platform, supporting multiple users and organizations.
-
----
 
 ## Tech Stack
 
@@ -26,8 +22,6 @@
 - **Real-time Notifications**: [WhatsApp Baileys](https://github.com/WhiskeySockets/Baileys)
 - **Caching/Queue**: [Redis](https://redis.io/)
 - **Animations**: [Framer Motion](https://www.framer.com/motion/)
-
----
 
 ## Getting Started
 
@@ -68,8 +62,6 @@
    pnpm dev
    ```
 
----
-
 ## Docker Setup
 
 ReviewMyPR can be easily deployed using Docker.
@@ -88,8 +80,6 @@ ReviewMyPR can be easily deployed using Docker.
 3. **Verify**:
    The application will be available at `http://localhost:3000`.
 
----
-
 ## Self-Hosting as a SaaS
 
 ReviewMyPR is designed to be easily self-hosted. 
@@ -98,18 +88,6 @@ ReviewMyPR is designed to be easily self-hosted.
 - **Deployment**: Can be deployed on Vercel, Railway, or any VPS supporting Node.js.
 - **License**: Released under the **AGPL-3.0 License**, making it free and open-source for self-hosting while ensuring improvements are shared back with the community.
 
----
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request or open an issue for any bugs or feature requests.
-
----
-
 ## License
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See the [LICENSE](LICENSE) file for details.
-
----
-
-Developed by the ReviewMyPR Team.
