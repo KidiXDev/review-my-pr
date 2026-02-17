@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/index";
 import { githubRepositories } from "@/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { getRequiredSession } from "@/lib/get-session";

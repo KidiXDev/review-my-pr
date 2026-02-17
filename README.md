@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ReviewMyPR
+
+**ReviewMyPR** is a self-hosted SaaS designed to bridge the gap between GitHub code reviews and instant communication. It delivers real-time Pull Request notifications directly to your team on WhatsApp, enhancing productivity and reducing response times.
+
+> **Note**: This project is currently in early development. Some features may not yet be fully implemented and may display only the user interface without underlying functionality.
+
+---
+
+## Key Features
+
+- **Instant Notifications**: Get notified on WhatsApp the moment a PR is opened, reviewed, or merged.
+- **Team Sync**: Keep your entire development team in the loop via WhatsApp groups.
+- **Sleek Dashboard**: A modern, data-driven interface to manage your repositories and notification settings.
+- **Self-Hostable**: Full control over your data. Deploy it on your own infrastructure.
+- **Secure**: Uses anonymous tokens and follows security best practices to protect your repository data.
+- **Multi-Tenant**: Built as a SaaS platform, supporting multiple users and organizations.
+
+---
+
+## Tech Stack
+
+- **Framework**: [Next.js 15+](https://nextjs.org/) (App Router)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [Drizzle ORM](https://orm.drizzle.team/)
+- **Authentication**: [Better Auth](https://better-auth.com/)
+- **Real-time Notifications**: [WhatsApp Baileys](https://github.com/WhiskeySockets/Baileys)
+- **Caching/Queue**: [Redis](https://redis.io/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Node.js**: v20 or higher
+- **pnpm**: Recommended package manager
+- **PostgreSQL**: For persistent data storage
+- **Redis**: For managing sessions and background tasks
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/KidiXDev/review-my-pr.git
+   cd review-my-pr
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
 
-## Learn More
+3. **Configure Environment Variables**:
+   Copy `.env.example` to `.env` and fill in the required values:
+   ```bash
+   cp .env.example .env
+   ```
+   *Required variables include `DATABASE_URL`, `REDIS_HOST`, `REDIS_PASSWORD`, `BETTER_AUTH_SECRET`, and `GOOGLE_CLIENT_ID/SECRET`.*
 
-To learn more about Next.js, take a look at the following resources:
+4. **Initialize Database**:
+   ```bash
+   pnpm run db:push
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. **Run the development server**:
+   ```bash
+   pnpm dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Docker Setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+ReviewMyPR can be easily deployed using Docker.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Using Docker Compose
+
+1. **Configure Environment Variables**:
+   Ensure your `.env` file contains the necessary secrets (Google Auth, etc.).
+
+2. **Start the stack**:
+   ```bash
+   docker compose up -d
+   ```
+   This will start the application, PostgreSQL, and Redis containers.
+
+3. **Verify**:
+   The application will be available at `http://localhost:3000`.
+
+---
+
+## Self-Hosting as a SaaS
+
+ReviewMyPR is designed to be easily self-hosted. 
+
+- **Docker Integration**: (Coming Soon)
+- **Deployment**: Can be deployed on Vercel, Railway, or any VPS supporting Node.js.
+- **License**: Released under the **AGPL-3.0 License**, making it free and open-source for self-hosting while ensuring improvements are shared back with the community.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request or open an issue for any bugs or feature requests.
+
+---
+
+## License
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See the [LICENSE](LICENSE) file for details.
+
+---
+
+Developed by the ReviewMyPR Team.

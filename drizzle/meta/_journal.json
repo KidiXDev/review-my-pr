@@ -15,6 +15,13 @@
       "when": 1771242248530,
       "tag": "0001_young_wallflower",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771316706543,
+      "tag": "0002_perfect_wildside",
+      "breakpoints": true
     }
   ]
 }
