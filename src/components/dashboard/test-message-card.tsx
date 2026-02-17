@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/common/modal/searchable-select";
 import { toast } from "sonner";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, CheckCircle2 } from "lucide-react";
 import { useSavedGroups } from "@/hooks/use-groups";
 import { useSendTestMessage } from "@/hooks/use-whatsapp";
 import { useDebounce } from "use-debounce";
@@ -32,22 +32,41 @@ export function TestMessageCard() {
 
   const sendMessage = useSendTestMessage();
 
+  const selectedGroupName =
+    groups.find((g) => g.groupId === selectedGroup)?.name ?? "";
+
   const sendTest = () => {
     if (!selectedGroup) return toast.error("Please select a group");
     sendMessage.mutate({ groupId: selectedGroup, message });
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Send Test Message</CardTitle>
-        <CardDescription>
-          Verify your bot can send messages to groups
-        </CardDescription>
+    <Card className="relative overflow-hidden">
+      {sendMessage.isSuccess && (
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-emerald-500 animate-in fade-in duration-500" />
+      )}
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Send className="h-4 w-4 text-muted-foreground" />
+              Send Test Message
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Verify your bot can deliver to WhatsApp groups.
+            </CardDescription>
+          </div>
+          {sendMessage.isSuccess && (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium animate-in fade-in slide-in-from-right-2 duration-300">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Sent
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label>Target Group</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Target Group</Label>
           <SearchableSelect
             value={selectedGroup}
             onValueChange={setSelectedGroup}
@@ -64,22 +83,28 @@ export function TestMessageCard() {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Message</Label>
-          <Input value={message} onChange={(e) => setMessage(e.target.value)} />
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Message</Label>
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="text-sm"
+          />
         </div>
 
         <Button
-          className="w-full"
+          className="w-full gap-2"
           onClick={sendTest}
           disabled={sendMessage.isPending || !selectedGroup}
         >
           {sendMessage.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Send className="mr-2 h-4 w-4" />
+            <Send className="h-4 w-4" />
           )}
-          Send Test Notification
+          {sendMessage.isPending
+            ? "Sending..."
+            : `Send to ${selectedGroupName || "Group"}`}
         </Button>
       </CardContent>
     </Card>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -29,6 +28,13 @@ import {
 } from "@/hooks/use-whatsapp";
 import { useSavedGroups } from "@/hooks/use-groups";
 import { useDebounce } from "use-debounce";
+
+import { DashboardHeader } from "./dashboard-header";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 export function GroupsClient() {
   const [syncOpen, setSyncOpen] = useState(false);
@@ -63,11 +69,13 @@ export function GroupsClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">WhatsApp Groups</h2>
+      <DashboardHeader
+        heading="Groups"
+        text="Manage your connected WhatsApp groups and notification targets."
+      >
         <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
           <DialogTrigger asChild>
-            <Button onClick={handleSyncClick}>
+            <Button onClick={handleSyncClick} variant="outline">
               <RefreshCw className="mr-2 h-4 w-4" />
               Sync from WhatsApp
             </Button>
@@ -75,14 +83,17 @@ export function GroupsClient() {
           <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Select Groups to Import</DialogTitle>
-              <div className="relative pt-2">
-                <Search className="absolute left-2 top-4.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search WhatsApp groups..."
-                  value={importSearchQuery}
-                  onChange={(e) => setImportSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
+              <div className="pt-2">
+                <InputGroup>
+                  <InputGroupAddon>
+                    <Search className="h-4 w-4" />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    placeholder="Search WhatsApp groups..."
+                    value={importSearchQuery}
+                    onChange={(e) => setImportSearchQuery(e.target.value)}
+                  />
+                </InputGroup>
               </div>
             </DialogHeader>
             <div className="flex-1 overflow-hidden">
@@ -146,19 +157,22 @@ export function GroupsClient() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </DashboardHeader>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
           <CardTitle className="text-xl">Connected Groups</CardTitle>
-          <div className="relative w-72">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search connected groups..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
+          <div className="w-72">
+            <InputGroup>
+              <InputGroupAddon>
+                <Search className="h-4 w-4" />
+              </InputGroupAddon>
+              <InputGroupInput
+                placeholder="Search connected groups..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </InputGroup>
           </div>
         </CardHeader>
         <CardContent>

@@ -38,6 +38,8 @@ import {
   Repository,
 } from "@/hooks/use-repos";
 
+import { DashboardHeader } from "./dashboard-header";
+
 export function ReposClient() {
   const { data: repos = [], isLoading: loading } = useRepos();
   const addRepoMutation = useAddRepo();
@@ -76,13 +78,14 @@ export function ReposClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">
-          GitHub Repositories
-        </h2>
+      <DashboardHeader
+        heading="Repositories"
+        text="Connect your GitHub repositories to receive real-time WhatsApp notifications for PRs and issues."
+        showAction={false}
+      >
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300">
               <Plus className="mr-2 h-4 w-4" />
               Add Repository
             </Button>
@@ -117,7 +120,7 @@ export function ReposClient() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </DashboardHeader>
 
       <Card>
         <CardHeader>

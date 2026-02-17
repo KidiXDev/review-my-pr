@@ -1,4 +1,12 @@
-import { pgTable, text, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  boolean,
+  timestamp,
+  uuid,
+  integer,
+  index,
+} from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { user } from "./auth-schema";
 
@@ -68,6 +76,23 @@ export const notificationTemplates = pgTable("notification_template", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+export const webhookEvents = pgTable(
+  "webhook_event",
+  {
+    id: uuid("id")
+      .default(sql`pg_catalog.gen_random_uuid()`)
+      .primaryKey(),
+    repoName: text("repo_name").notNull(),
+    eventType: text("event_type").notNull(),
+    title: text("title"),
+    author: text("author"),
+    groupsSent: integer("groups_sent").default(0).notNull(),
+    groupsFailed: integer("groups_failed").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("webhook_event_created_at_idx").on(table.createdAt)],
+);
 
 // Relations
 

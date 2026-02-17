@@ -5,6 +5,7 @@ import {
   githubRepositories,
   whatsappGroups,
   notificationTemplates,
+  webhookEvents,
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
@@ -126,6 +127,15 @@ export async function POST(request: Request) {
 
     const successes = results.filter((r) => r.status === "fulfilled").length;
     const failures = results.filter((r) => r.status === "rejected").length;
+
+    await db.insert(webhookEvents).values({
+      repoName: repo,
+      eventType: event,
+      title,
+      author,
+      groupsSent: successes,
+      groupsFailed: failures,
+    });
 
     return NextResponse.json({
       success: true,
