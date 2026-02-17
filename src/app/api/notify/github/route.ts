@@ -27,6 +27,7 @@ interface WebhookPayload {
   pull_request?: {
     title?: string;
     html_url?: string;
+    merged?: boolean;
   };
   issue?: {
     title?: string;
@@ -85,10 +86,12 @@ export async function POST(request: Request) {
       if (githubEvent === "pull_request") {
         title = body.pull_request?.title;
         url = body.pull_request?.html_url;
-        // Map GitHub actions to more readable sub-events if needed, or just use "pull_request"
-        // For now, let's append action if available
         if (body.action) {
-          event = `${githubEvent}:${body.action}`;
+          if (body.action === "closed" && body.pull_request?.merged) {
+            event = `${githubEvent}:merged`;
+          } else {
+            event = `${githubEvent}:${body.action}`;
+          }
         }
       } else if (githubEvent === "issues") {
         title = body.issue?.title;

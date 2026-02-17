@@ -43,7 +43,7 @@ export function IntegrationGuideDialog({
   -H "Content-Type: application/json" \\
   -d '{
     "token": "${repo.apiToken}",
-    "event": "pr_opened",
+    "event": "pull_request:opened",
     "repo": "${repo.repoName}",
     "title": "New PR: Feature X",
     "author": "dev-user",
@@ -193,6 +193,38 @@ export function IntegrationGuideDialog({
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-4 border-t border-border">
+              <h4 className="font-medium text-sm">Allowed Event IDs</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Use these IDs in your <code>event</code> field or when
+                configuring the allowlist.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  "pull_request:opened",
+                  "pull_request:reopened",
+                  "pull_request:merged",
+                  "pull_request:closed",
+                  "pull_request:review_requested",
+                ].map((id) => (
+                  <div
+                    key={id}
+                    className="flex items-center justify-between rounded-md border border-muted bg-muted/50 px-3 py-2"
+                  >
+                    <code className="text-xs font-mono">{id}</code>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => copyToClipboard(id)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
           </TabsContent>

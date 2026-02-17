@@ -51,12 +51,25 @@ interface RepoSettingsDialogProps {
 }
 
 const AVAILABLE_EVENTS = [
-  { id: "pr_opened", label: "PR Opened" },
-  { id: "pr_reopened", label: "PR Reopened" },
-  { id: "pr_merged", label: "PR Merged" },
-  { id: "pr_closed", label: "PR Closed" },
-  { id: "review_requested", label: "Review Requested" },
+  { id: "pull_request:opened", label: "PR Opened" },
+  { id: "pull_request:reopened", label: "PR Reopened" },
+  { id: "pull_request:merged", label: "PR Merged" },
+  { id: "pull_request:closed", label: "PR Closed" },
+  { id: "pull_request:review_requested", label: "Review Requested" },
 ];
+
+// Helper to migrate old event IDs to new format
+const migrateEvents = (events: string[] | null) => {
+  if (!events) return [];
+  const map: Record<string, string> = {
+    pr_opened: "pull_request:opened",
+    pr_reopened: "pull_request:reopened",
+    pr_merged: "pull_request:merged",
+    pr_closed: "pull_request:closed",
+    review_requested: "pull_request:review_requested",
+  };
+  return events.map((e) => map[e] || e);
+};
 
 export function RepoSettingsDialog({
   repo,
@@ -73,7 +86,7 @@ export function RepoSettingsDialog({
 
   const form = useForm({
     defaultValues: {
-      allowedEvents: repo.allowedEvents || [],
+      allowedEvents: migrateEvents(repo.allowedEvents),
       groupIds: repo.groupIds || [],
       messageTemplate: repo.messageTemplate || "",
     } as RepoSettingsFormValues,
@@ -109,6 +122,11 @@ export function RepoSettingsDialog({
   useEffect(() => {
     if (open) {
       form.reset();
+      // Explicitly set values to ensure migration applies if defaultValues are stale
+      form.setFieldValue("allowedEvents", migrateEvents(repo.allowedEvents));
+      form.setFieldValue("groupIds", repo.groupIds || []);
+      form.setFieldValue("messageTemplate", repo.messageTemplate || "");
+
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTrackedGroupIds(repo.groupIds || []);
     }
