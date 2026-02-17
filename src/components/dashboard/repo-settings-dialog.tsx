@@ -109,6 +109,7 @@ export function RepoSettingsDialog({
   useEffect(() => {
     if (open) {
       form.reset();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTrackedGroupIds(repo.groupIds || []);
     }
   }, [open, repo, form]);

@@ -190,7 +190,6 @@ const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
         <PopoverContent
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          // Stop wheel event from reaching the Dialog's scroll-lock interceptors
           onWheel={(e) => e.stopPropagation()}
           className={cn(
             "p-0 rounded-lg border border-zinc-200 dark:border-zinc-700",

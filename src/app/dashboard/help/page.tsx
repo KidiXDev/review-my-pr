@@ -70,13 +70,22 @@ export default function HelpPage() {
             <MessageCircle className="h-6 w-6" />
           </div>
           <div className="space-y-1">
-            <h3 className="font-semibold text-lg">Community</h3>
+            <h3 className="font-semibold text-lg">Discussions</h3>
             <p className="text-sm text-muted-foreground">
-              Join our WhatsApp group for support.
+              Contribute to the project and discuss ideas.
             </p>
           </div>
-          <Button variant="link" className="text-blue-400 gap-1 p-0 mt-auto">
-            Join Chat <ExternalLink className="h-3 w-3" />
+          <Button
+            onClick={() =>
+              window.open(
+                "https://github.com/KidiXDev/review-my-pr/discussions",
+                "_blank",
+              )
+            }
+            variant="link"
+            className="text-blue-400 gap-1 p-0 mt-auto"
+          >
+            Join Discussions <ExternalLink className="h-3 w-3" />
           </Button>
         </Card>
 
@@ -90,7 +99,13 @@ export default function HelpPage() {
               Report issues or contribute on GitHub.
             </p>
           </div>
-          <Button variant="link" className="text-white gap-1 p-0 mt-auto">
+          <Button
+            onClick={() =>
+              window.open("https://github.com/KidiXDev/review-my-pr", "_blank")
+            }
+            variant="link"
+            className="text-white gap-1 p-0 mt-auto"
+          >
             View Repo <ExternalLink className="h-3 w-3" />
           </Button>
         </Card>
