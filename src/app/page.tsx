@@ -56,7 +56,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-5xl md:text-7xl font-bold tracking-tight text-gradient max-w-4xl leading-[1.1]"
+                className="text-5xl md:text-7xl font-bold tracking-tight p-2 text-gradient max-w-4xl leading-[1.1]"
               >
                 GitHub Actions meet <br /> WhatsApp productivity.
               </motion.h1>
@@ -169,7 +169,7 @@ export default function LandingPage() {
               <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-blue-500/10 blur-[100px] rounded-full" />
 
               <div className="relative z-10 space-y-8">
-                <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-gradient">
+                <h2 className="text-4xl py-4 md:text-6xl font-bold tracking-tight text-gradient">
                   Ship faster, together.
                 </h2>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
