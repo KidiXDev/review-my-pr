@@ -20,7 +20,7 @@ const items = [
 
 const secondaryItems = [
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
-  { title: "Help", href: "#", icon: HelpCircle },
+  { title: "Help", href: "/dashboard/help", icon: HelpCircle },
 ];
 
 export function SidebarNav() {
