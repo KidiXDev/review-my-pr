@@ -25,6 +25,8 @@ services:
         condition: service_healthy
       db-migrate:
         condition: service_completed_successfully
+    volumes:
+      - whatsapp_auth_data:/app/.baileys_auth
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 10s
@@ -81,3 +83,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  whatsapp_auth_data:
