@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import { db } from "@/index";
 import { githubRepositories } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { randomBytes } from "crypto";
+import { getRequiredSession } from "@/lib/get-session";
 
 export async function GET() {
   try {
+    const session = await getRequiredSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const repos = await db
       .select()
       .from(githubRepositories)
+      .where(eq(githubRepositories.userId, session.user.id))
       .orderBy(desc(githubRepositories.createdAt));
     return NextResponse.json(repos);
   } catch {
@@ -26,28 +33,26 @@ const saveRepoSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const session = await getRequiredSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { repoName } = saveRepoSchema.parse(body);
 
-    const user = await db.query.user.findFirst();
-    if (!user) {
-      return NextResponse.json({ error: "No user found" }, { status: 401 });
-    }
-
-    // Generate a secure random token
     const apiToken = randomBytes(32).toString("hex");
 
     await db.insert(githubRepositories).values({
       repoName,
       apiToken,
-      userId: user.id,
+      userId: session.user.id,
       isActive: true,
     });
 
-    // Trigger internal notification
     try {
       const { triggerNotification } = await import("@/actions/notifications");
-      await triggerNotification(user.id, {
+      await triggerNotification(session.user.id, {
         type: "repo:added",
         title: "Repository Added",
         message: `Successfully linked ${repoName} to your account.`,
@@ -79,8 +84,22 @@ const deleteRepoSchema = z.object({
 
 export async function DELETE(request: Request) {
   try {
+    const session = await getRequiredSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id } = deleteRepoSchema.parse(body);
+
+    const [repo] = await db
+      .select({ userId: githubRepositories.userId })
+      .from(githubRepositories)
+      .where(eq(githubRepositories.id, id));
+
+    if (!repo || repo.userId !== session.user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
     await db.delete(githubRepositories).where(eq(githubRepositories.id, id));
 
@@ -106,9 +125,23 @@ const updateRepoSchema = z.object({
 
 export async function PATCH(request: Request) {
   try {
+    const session = await getRequiredSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, allowedEvents, groupIds, messageTemplate, isActive } =
       updateRepoSchema.parse(body);
+
+    const [repo] = await db
+      .select({ userId: githubRepositories.userId })
+      .from(githubRepositories)
+      .where(eq(githubRepositories.id, id));
+
+    if (!repo || repo.userId !== session.user.id) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
     await db
       .update(githubRepositories)

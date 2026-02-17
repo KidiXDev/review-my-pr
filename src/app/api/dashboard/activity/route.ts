@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { db } from "@/index";
 import { webhookEvents } from "@/db/schema";
-import { sql, gte } from "drizzle-orm";
+import { sql, gte, eq, and } from "drizzle-orm";
 import { subDays, format, eachDayOfInterval } from "date-fns";
+import { getRequiredSession } from "@/lib/get-session";
 
 export async function GET() {
   try {
+    const session = await getRequiredSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
     const sevenDaysAgo = subDays(new Date(), 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
@@ -16,7 +23,12 @@ export async function GET() {
         messages: sql<number>`coalesce(sum(${webhookEvents.groupsSent}), 0)`,
       })
       .from(webhookEvents)
-      .where(gte(webhookEvents.createdAt, sevenDaysAgo))
+      .where(
+        and(
+          gte(webhookEvents.createdAt, sevenDaysAgo),
+          eq(webhookEvents.userId, userId),
+        ),
+      )
       .groupBy(sql`to_char(${webhookEvents.createdAt}, 'YYYY-MM-DD')`)
       .orderBy(sql`to_char(${webhookEvents.createdAt}, 'YYYY-MM-DD')`);
 
