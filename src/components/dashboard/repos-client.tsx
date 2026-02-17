@@ -28,9 +28,10 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2, Copy, Settings } from "lucide-react";
+import { Loader2, Plus, Trash2, Copy, Settings, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { RepoSettingsDialog } from "./repo-settings-dialog";
+import { IntegrationGuideDialog } from "./integration-guide-dialog";
 import { useAlert } from "@/components/providers/alert-provider";
 import {
   useRepos,
@@ -52,6 +53,7 @@ export function ReposClient() {
 
   // Settings Dialog
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
 
   const handleAddRepo = async () => {
@@ -84,6 +86,11 @@ export function ReposClient() {
   const openSettings = (repo: Repository) => {
     setSelectedRepo(repo);
     setSettingsOpen(true);
+  };
+
+  const openGuide = (repo: Repository) => {
+    setSelectedRepo(repo);
+    setGuideOpen(true);
   };
 
   return (
@@ -212,6 +219,14 @@ export function ReposClient() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => openGuide(repo)}
+                          title="Integration Guide"
+                        >
+                          <BookOpen className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDeleteRepo(repo.id)}
                           disabled={
                             deleteRepoMutation.isPending &&
@@ -236,38 +251,19 @@ export function ReposClient() {
         </CardContent>
       </Card>
 
-      {repos.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Integration Guide</CardTitle>
-            <CardDescription>
-              How to send notifications from GitHub Actions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted p-4 rounded-md overflow-x-auto">
-              <pre className="text-xs">
-                {`curl -X POST ${typeof window !== "undefined" ? window.location.origin : ""}/api/notify/github \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "token": "${repos[0]?.apiToken || "YOUR_API_TOKEN"}",
-    "event": "pr_opened",
-    "repo": "${repos[0]?.repoName || "owner/repo"}",
-    "title": "New PR: Feature X",
-    "author": "octocat",
-    "url": "https://github.com/..."
-  }'`}
-              </pre>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {selectedRepo && (
         <RepoSettingsDialog
           repo={selectedRepo}
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
+        />
+      )}
+
+      {selectedRepo && (
+        <IntegrationGuideDialog
+          repo={selectedRepo}
+          open={guideOpen}
+          onOpenChange={setGuideOpen}
         />
       )}
     </div>

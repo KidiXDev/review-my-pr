@@ -27,7 +27,7 @@ export function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col gap-6 px-2">
+    <div className="flex flex-col gap-6 py-1 px-2">
       <nav className="grid gap-1">
         {items.map((item, index) => {
           const isActive = pathname === item.href;

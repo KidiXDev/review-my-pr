@@ -6,7 +6,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRepos } from "@/hooks/use-repos";
+import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { IntegrationGuideDialog } from "./integration-guide-dialog";
+import { useRepos, type Repository } from "@/hooks/use-repos";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GitBranch, MoreHorizontal } from "lucide-react";
@@ -15,6 +23,8 @@ import { cn } from "@/lib/utils";
 
 export function RepoList() {
   const { data: repos, isLoading } = useRepos();
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
 
   if (isLoading) {
     return <RepoListSkeleton />;
@@ -80,19 +90,41 @@ export function RepoList() {
                 })}
               </TableCell>
               <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">Actions</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedRepo(repo);
+                        setGuideOpen(true);
+                      }}
+                    >
+                      Connection Instructions
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {selectedRepo && (
+        <IntegrationGuideDialog
+          repo={selectedRepo}
+          open={guideOpen}
+          onOpenChange={setGuideOpen}
+        />
+      )}
     </div>
   );
 }

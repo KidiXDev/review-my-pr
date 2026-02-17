@@ -10,19 +10,118 @@ import {
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
-const notifySchema = z.object({
-  token: z.string(),
-  event: z.string(),
-  repo: z.string(),
-  title: z.string(),
-  author: z.string(),
-  url: z.string().url(),
-});
+interface WebhookPayload {
+  token?: string;
+  event?: string;
+  repo?: string;
+  title?: string;
+  author?: string;
+  url?: string;
+  action?: string;
+  repository?: {
+    full_name?: string;
+  };
+  sender?: {
+    login?: string;
+  };
+  pull_request?: {
+    title?: string;
+    html_url?: string;
+  };
+  issue?: {
+    title?: string;
+    html_url?: string;
+  };
+  head_commit?: {
+    message?: string;
+  };
+  compare?: string;
+  pusher?: {
+    name?: string;
+  };
+}
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { token, event, repo, title, author, url } = notifySchema.parse(body);
+    const urlObj = new URL(request.url);
+    const urlToken = urlObj.searchParams.get("token");
+
+    let body: WebhookPayload;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON payload" },
+        { status: 400 },
+      );
+    }
+
+    let token = urlToken;
+    let event = body.event;
+    let repo = body.repo;
+    let title = body.title;
+    let author = body.author;
+    let url = body.url;
+
+    // Handle standard JSON payload (curl/legacy) if token not in URL
+    if (!token && body.token) {
+      token = body.token;
+    }
+
+    // Determine event type from header if available (GitHub Webhook)
+    const githubEvent = request.headers.get("x-github-event");
+    if (githubEvent) {
+      event = githubEvent;
+
+      // Attempt to extract details from GitHub webhook payload
+      if (body.repository) {
+        repo = body.repository.full_name;
+      }
+
+      if (body.sender) {
+        author = body.sender.login;
+      }
+
+      if (githubEvent === "pull_request") {
+        title = body.pull_request?.title;
+        url = body.pull_request?.html_url;
+        // Map GitHub actions to more readable sub-events if needed, or just use "pull_request"
+        // For now, let's append action if available
+        if (body.action) {
+          event = `${githubEvent}:${body.action}`;
+        }
+      } else if (githubEvent === "issues") {
+        title = body.issue?.title;
+        url = body.issue?.html_url;
+        if (body.action) {
+          event = `${githubEvent}:${body.action}`;
+        }
+      } else if (githubEvent === "push") {
+        title = body.head_commit?.message?.split("\n")[0] || "New Push";
+        url = body.compare;
+        author = body.pusher?.name || author;
+      }
+    }
+
+    // Fallback/Validation
+    if (!token) {
+      return NextResponse.json({ error: "Missing token" }, { status: 401 });
+    }
+
+    // Ensure we have the minimum required fields
+    // If it was a legacy request, these should be satisfied.
+    // If it was a real webhook, we tried to extract them.
+    if (!repo || !event) {
+      return NextResponse.json(
+        { error: "Missing repo or event in payload" },
+        { status: 400 },
+      );
+    }
+
+    // Default values for missing optional fields to prevent crashes
+    title = title || "Notification";
+    author = author || "System";
+    url = url || "";
 
     // 1. Validate Token & Repo
     const repository = await db.query.githubRepositories.findFirst({
