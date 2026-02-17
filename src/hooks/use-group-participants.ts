@@ -5,6 +5,7 @@ export interface GroupParticipant {
   id: string;
   phone: string;
   name: string;
+  groupIds: string[];
 }
 
 export function useGroupParticipants(groupIds: string[]) {

@@ -40,15 +40,23 @@ export async function GET(request: Request) {
       );
     }
 
-    const seen = new Set<string>();
-    const participants: { id: string; phone: string; name: string }[] = [];
+    const participantsMap = new Map<
+      string,
+      { id: string; phone: string; name: string; groupIds: string[] }
+    >();
 
     for (const groupId of groupIds) {
       try {
         const members = await client.getGroupParticipants(groupId);
         for (const m of members) {
-          if (seen.has(m.id)) continue;
-          seen.add(m.id);
+          const existing = participantsMap.get(m.id);
+
+          if (existing) {
+            if (!existing.groupIds.includes(groupId)) {
+              existing.groupIds.push(groupId);
+            }
+            continue;
+          }
 
           let phone = "";
 
@@ -65,10 +73,11 @@ export async function GET(request: Request) {
             phone = m.id.replace(/@s\.whatsapp\.net$/, "");
           }
 
-          participants.push({
+          participantsMap.set(m.id, {
             id: m.id,
             phone,
             name: m.name || m.notify || m.verifiedName || phone,
+            groupIds: [groupId],
           });
         }
       } catch (err) {
@@ -80,7 +89,7 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json(participants);
+    return NextResponse.json(Array.from(participantsMap.values()));
   } catch (error) {
     console.error("Failed to fetch group participants:", error);
     return NextResponse.json(

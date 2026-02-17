@@ -366,6 +366,7 @@ export function RepoSettingsDialog({
                         onBlur={field.handleBlur}
                         onChange={(val) => field.handleChange(val)}
                         participants={participants}
+                        groups={groups}
                         placeholder="*{pr.repo}*: {pr.title}... Type @ to mention"
                         className="font-mono text-sm h-32 max-h-32"
                         aria-invalid={isInvalid}
