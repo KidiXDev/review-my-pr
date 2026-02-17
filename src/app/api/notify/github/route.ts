@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { waClient } from "@/lib/whatsapp-client";
+import { sessionManager } from "@/lib/session-manager";
 import { db } from "@/index";
 import {
   githubRepositories,
@@ -58,7 +58,10 @@ export async function POST(request: Request) {
     } else {
       // Fallback to all active groups if no specific groups configured (Legacy behavior)
       const allGroups = await db.query.whatsappGroups.findMany({
-        where: eq(whatsappGroups.isActive, true),
+        where: and(
+          eq(whatsappGroups.isActive, true),
+          eq(whatsappGroups.userId, repository.userId),
+        ),
       });
       targetGroups = allGroups.map(
         (g: typeof whatsappGroups.$inferSelect) => g.groupId,
@@ -78,6 +81,7 @@ export async function POST(request: Request) {
         where: and(
           eq(notificationTemplates.eventType, event),
           eq(notificationTemplates.isActive, true),
+          eq(notificationTemplates.userId, repository.userId),
         ),
       });
       if (globalTemplate) {
@@ -106,7 +110,8 @@ export async function POST(request: Request) {
     }
 
     // 6. Send to resolved groups
-    const status = waClient.getStatus();
+    const client = sessionManager.getClient(repository.userId);
+    const status = client.getStatus();
     if (!status.isReady) {
       console.warn("WhatsApp client not ready, cannot send notification");
       return NextResponse.json(
@@ -120,15 +125,14 @@ export async function POST(request: Request) {
     );
 
     const results = await Promise.allSettled(
-      targetGroups.map((groupId) =>
-        waClient.sendGroupMessage(groupId, message),
-      ),
+      targetGroups.map((groupId) => client.sendGroupMessage(groupId, message)),
     );
 
     const successes = results.filter((r) => r.status === "fulfilled").length;
     const failures = results.filter((r) => r.status === "rejected").length;
 
     await db.insert(webhookEvents).values({
+      userId: repository.userId,
       repoName: repo,
       eventType: event,
       title,

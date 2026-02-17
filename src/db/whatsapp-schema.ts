@@ -83,6 +83,9 @@ export const webhookEvents = pgTable(
     id: uuid("id")
       .default(sql`pg_catalog.gen_random_uuid()`)
       .primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     repoName: text("repo_name").notNull(),
     eventType: text("event_type").notNull(),
     title: text("title"),
@@ -132,3 +135,10 @@ export const notificationTemplatesRelations = relations(
     }),
   }),
 );
+
+export const webhookEventsRelations = relations(webhookEvents, ({ one }) => ({
+  user: one(user, {
+    fields: [webhookEvents.userId],
+    references: [user.id],
+  }),
+}));

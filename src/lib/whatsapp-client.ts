@@ -10,34 +10,44 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import pino from "pino";
 import { Boom } from "@hapi/boom";
+import fs from "fs";
+import path from "path";
 
-declare global {
-  var whatsappClient: WhatsAppClient | undefined;
-}
-
-class WhatsAppClient {
+export class WhatsAppClient {
   private socket: WASocket | null = null;
   private qrCode: string | null = null;
   private isConnected: boolean = false;
   private isReady: boolean = false;
   private authState: AuthenticationState | null = null;
   private saveCreds: (() => Promise<void>) | null = null;
+  private userId: string;
+  private authDir: string;
 
-  constructor() {
+  constructor(userId: string) {
+    this.userId = userId;
+    this.authDir = path.join(process.cwd(), ".baileys_auth", userId);
     this.initialize();
   }
 
   private async initialize() {
-    console.log("Initializing WhatsApp Client with Baileys...");
+    console.log(`Initializing WhatsApp Client for user ${this.userId}...`);
+
+    // Ensure auth directory exists
+    if (!fs.existsSync(this.authDir)) {
+      fs.mkdirSync(this.authDir, { recursive: true });
+    }
 
     try {
-      const { state, saveCreds } = await baileysAuthState("./.baileys_auth");
+      const { state, saveCreds } = await baileysAuthState(this.authDir);
       this.authState = state;
       this.saveCreds = saveCreds;
 
       this.connectToWhatsApp();
     } catch (error) {
-      console.error("Failed to initialize auth state:", error);
+      console.error(
+        `Failed to initialize auth state for user ${this.userId}:`,
+        error,
+      );
     }
   }
 
@@ -46,7 +56,7 @@ class WhatsAppClient {
     const logger: any = pino({ level: "silent" });
 
     if (!this.authState || !this.saveCreds) {
-      console.error("Auth state not initialized");
+      console.error(`Auth state not initialized for user ${this.userId}`);
       return;
     }
 
@@ -62,7 +72,7 @@ class WhatsAppClient {
     this.socket = makeWASocket(config);
 
     if (!this.socket) {
-      console.error("Failed to create socket");
+      console.error(`Failed to create socket for user ${this.userId}`);
       return;
     }
 
@@ -74,7 +84,7 @@ class WhatsAppClient {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
-          console.log("QR Code received");
+          console.log(`QR Code received for user ${this.userId}`);
           this.qrCode = qr;
         }
 
@@ -84,7 +94,7 @@ class WhatsAppClient {
             error?.output?.statusCode !== DisconnectReason.loggedOut;
 
           console.log(
-            "connection closed due to ",
+            `Connection closed for user ${this.userId} due to `,
             error,
             ", reconnecting ",
             shouldReconnect,
@@ -96,28 +106,28 @@ class WhatsAppClient {
             this.connectToWhatsApp();
           }
         } else if (connection === "open") {
-          console.log("opened connection");
+          console.log(`Opened connection for user ${this.userId}`);
           this.isConnected = true;
           this.isReady = true;
           this.qrCode = null;
 
           // Trigger internal notification for the user
-          import("@/index").then(async ({ db }) => {
-            try {
-              const user = await db.query.user.findFirst();
-              if (user) {
-                const { triggerNotification } =
-                  await import("@/actions/notifications");
-                await triggerNotification(user.id, {
+          import("@/actions/notifications").then(
+            async ({ triggerNotification }) => {
+              try {
+                await triggerNotification(this.userId, {
                   type: "whatsapp:connected",
                   title: "WhatsApp Connected",
                   message: "Your WhatsApp session is now active and ready.",
                 });
+              } catch (err) {
+                console.error(
+                  `Failed to notify user ${this.userId} about WA connection:`,
+                  err,
+                );
               }
-            } catch (err) {
-              console.error("Failed to notify user about WA connection:", err);
-            }
-          });
+            },
+          );
         }
       },
     );
@@ -157,17 +167,18 @@ class WhatsAppClient {
       await this.socket.sendMessage(groupId, { text: message });
       return true;
     } catch (error) {
-      console.error(`Failed to send message to group ${groupId}:`, error);
+      console.error(
+        `Failed to send message to group ${groupId} for user ${this.userId}:`,
+        error,
+      );
       throw error;
     }
   }
+
+  public async destroy() {
+    if (this.socket) {
+      this.socket.end(undefined);
+      this.socket = null;
+    }
+  }
 }
-
-// Singleton pattern to prevent multiple instances in dev mode
-const whatsappClientSingleton = global.whatsappClient || new WhatsAppClient();
-
-if (process.env.NODE_ENV !== "production") {
-  global.whatsappClient = whatsappClientSingleton;
-}
-
-export const waClient = whatsappClientSingleton;

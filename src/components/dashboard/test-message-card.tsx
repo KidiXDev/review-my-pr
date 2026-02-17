@@ -32,18 +32,15 @@ export function TestMessageCard() {
 
   const sendMessage = useSendTestMessage();
 
-  const selectedGroupName =
-    groups.find((g) => g.groupId === selectedGroup)?.name ?? "";
-
   const sendTest = () => {
     if (!selectedGroup) return toast.error("Please select a group");
     sendMessage.mutate({ groupId: selectedGroup, message });
   };
 
   return (
-    <Card className="h-full border-white/5 bg-white/5 backdrop-blur-md relative overflow-hidden group">
+    <Card className="h-full border-white/5 bg-white/5 backdrop-blur-md relative overflow-hidden group flex flex-col">
       {sendMessage.isSuccess && (
-        <div className="absolute inset-x-0 top-0 h-0.5 bg-emerald-500 animate-in fade-in duration-500 z-20" />
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-emerald-500 shadow-[0_0_10px_var(--color-emerald-500)] animate-in fade-in duration-500 z-20" />
       )}
 
       <CardHeader className="relative z-10 pb-3">
@@ -54,11 +51,11 @@ export function TestMessageCard() {
               Test Integration
             </CardTitle>
             <CardDescription className="mt-1">
-              Verify your bot can deliver to WhatsApp groups.
+              Verify your bot can deliver messages.
             </CardDescription>
           </div>
           {sendMessage.isSuccess && (
-            <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium animate-in fade-in slide-in-from-right-2 duration-300">
+            <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-medium animate-in fade-in slide-in-from-right-2 duration-300 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Sent
             </div>
@@ -66,9 +63,11 @@ export function TestMessageCard() {
         </div>
       </CardHeader>
 
-      <CardContent className="relative z-10 space-y-4">
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Target Group</Label>
+      <CardContent className="relative z-10 space-y-6 flex-1">
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Target Group
+          </Label>
           <SearchableSelect
             value={selectedGroup}
             onValueChange={setSelectedGroup}
@@ -76,8 +75,8 @@ export function TestMessageCard() {
               value: g.groupId,
               label: g.name,
             }))}
-            placeholder="Select a group"
-            className="flex-1 w-full bg-background/50 border-white/10"
+            placeholder="Select a group..."
+            className="w-full bg-black/20 border-white/10 hover:border-white/20 transition-colors focus:ring-indigo-500/20"
             disabled={fetchingGroups}
             onSearchChange={setSearchQuery}
             searchValue={searchQuery}
@@ -85,29 +84,36 @@ export function TestMessageCard() {
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Message</Label>
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Message Content
+          </Label>
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="text-sm bg-background/50 border-white/10 focus-visible:ring-indigo-500/50"
+            className="bg-black/20 border-white/10 hover:border-white/20 transition-colors focus-visible:ring-indigo-500/20"
+            placeholder="Type a test message..."
           />
         </div>
 
-        <Button
-          className="w-full gap-2 bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-300"
-          onClick={sendTest}
-          disabled={sendMessage.isPending || !selectedGroup}
-        >
-          {sendMessage.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-          {sendMessage.isPending
-            ? "Sending..."
-            : `Send to ${selectedGroupName || "Group"}`}
-        </Button>
+        <div className="pt-2">
+          <Button
+            className="w-full gap-2 bg-linear-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white shadow-lg shadow-indigo-500/20 transition-all duration-300 border-0"
+            onClick={sendTest}
+            disabled={sendMessage.isPending || !selectedGroup}
+            size="lg"
+          >
+            {sendMessage.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            {sendMessage.isPending ? "Sending..." : `Send Test Message`}
+          </Button>
+          <p className="text-[10px] text-center text-muted-foreground mt-3">
+            This will send a real message to the selected WhatsApp group.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

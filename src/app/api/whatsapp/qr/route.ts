@@ -1,19 +1,30 @@
 import { NextResponse } from "next/server";
-import { waClient } from "@/lib/whatsapp-client";
+import { sessionManager } from "@/lib/session-manager";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function GET() {
   try {
-    const qr = waClient.getLatestQR();
-    const status = waClient.getStatus();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
 
-    // If connected, we might not have a QR, but that's fine.
-    // If not connected and no QR, it might be initializing.
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const client = sessionManager.getClient(userId);
+
+    const qr = client.getLatestQR();
+    const status = client.getStatus();
 
     return NextResponse.json({
       qr,
       ...status,
     });
-  } catch {
+  } catch (error) {
+    console.error("Failed to fetch WhatsApp status:", error);
     return NextResponse.json(
       { error: "Failed to fetch WhatsApp status" },
       { status: 500 },

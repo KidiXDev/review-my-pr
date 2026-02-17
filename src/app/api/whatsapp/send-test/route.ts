@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { waClient } from "@/lib/whatsapp-client";
+import { sessionManager } from "@/lib/session-manager";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const sendTestSchema = z.object({
   groupId: z.string(),
@@ -11,10 +13,21 @@ const sendTestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { groupId, message } = sendTestSchema.parse(body);
+    const userId = session.user.id;
 
-    const status = waClient.getStatus();
+    const client = sessionManager.getClient(userId);
+    const status = client.getStatus();
+
     if (!status.isReady) {
       return NextResponse.json(
         { error: "WhatsApp client is not ready" },
@@ -22,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await waClient.sendGroupMessage(groupId, message);
+    await client.sendGroupMessage(groupId, message);
 
     return NextResponse.json({ success: true });
   } catch (error) {

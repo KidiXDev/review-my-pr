@@ -6,6 +6,7 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { RepoList } from "@/components/dashboard/repo-list";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { TestMessageCard } from "@/components/dashboard/test-message-card";
+import { StatusCard } from "@/components/dashboard/status-card";
 import { useStats } from "@/hooks/use-stats";
 import {
   GitBranch,
@@ -119,8 +120,8 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <div className="col-span-1 md:col-span-6 lg:col-span-4 rounded-xl overflow-hidden glass p-1">
-          <TestMessageCard />
+        <div className="col-span-1 md:col-span-6 lg:col-span-4 rounded-xl overflow-hidden p-0 sm:p-0">
+          {stats?.whatsapp.isConnected ? <TestMessageCard /> : <StatusCard />}
         </div>
 
         <div className="col-span-1 md:col-span-6 lg:col-span-8 h-full">

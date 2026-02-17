@@ -1,27 +1,48 @@
 import { NextResponse } from "next/server";
 import { db } from "@/index";
 import { githubRepositories, whatsappGroups, webhookEvents } from "@/db/schema";
-import { waClient } from "@/lib/whatsapp-client";
-import { sql, gte } from "drizzle-orm";
+import { sessionManager } from "@/lib/session-manager";
+import { sql, gte, eq, and } from "drizzle-orm";
 import { subHours } from "date-fns";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function GET() {
   try {
-    const waStatus = waClient.getStatus();
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const client = sessionManager.getClient(userId);
+    const waStatus = client.getStatus();
 
     const [repoCount] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(githubRepositories);
+      .from(githubRepositories)
+      .where(eq(githubRepositories.userId, userId));
 
     const [groupCount] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(whatsappGroups);
+      .from(whatsappGroups)
+      .where(eq(whatsappGroups.userId, userId));
 
     const twentyFourHoursAgo = subHours(new Date(), 24);
+
+    // Now we can filter webhookEvents directly by userId
     const [eventCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(webhookEvents)
-      .where(gte(webhookEvents.createdAt, twentyFourHoursAgo));
+      .where(
+        and(
+          gte(webhookEvents.createdAt, twentyFourHoursAgo),
+          eq(webhookEvents.userId, userId),
+        ),
+      );
 
     return NextResponse.json({
       whatsapp: {
