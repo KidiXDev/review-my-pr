@@ -6,8 +6,9 @@ export async function proxy(request: NextRequest) {
   const isDashboard = path.startsWith("/dashboard");
   const isLogin = path === "/login";
 
-  // Get session token from cookies
-  const sessionToken = request.cookies.get("better-auth.session_token");
+  const sessionToken =
+    request.cookies.get("better-auth.session_token") ||
+    request.cookies.get("__Secure-better-auth.session_token");
 
   // Protect dashboard routes
   if (isDashboard && !sessionToken) {
