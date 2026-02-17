@@ -44,6 +44,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 
+RUN mkdir -p /app/.baileys_auth && chown nextjs:nodejs /app/.baileys_auth
+
 USER nextjs
 
 EXPOSE 3000
