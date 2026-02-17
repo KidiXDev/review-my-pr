@@ -77,24 +77,24 @@ export function ActivityChart() {
         <defs>
           <linearGradient id="gradEvents" x1="0" y1="0" x2="0" y2="1">
             <stop
-              offset="0%"
+              offset="5%"
               stopColor="var(--color-chart-1)"
-              stopOpacity={0.4}
+              stopOpacity={0.2}
             />
             <stop
-              offset="100%"
+              offset="95%"
               stopColor="var(--color-chart-1)"
               stopOpacity={0}
             />
           </linearGradient>
           <linearGradient id="gradMessages" x1="0" y1="0" x2="0" y2="1">
             <stop
-              offset="0%"
+              offset="5%"
               stopColor="var(--color-chart-2)"
-              stopOpacity={0.4}
+              stopOpacity={0.2}
             />
             <stop
-              offset="100%"
+              offset="95%"
               stopColor="var(--color-chart-2)"
               stopOpacity={0}
             />
@@ -104,6 +104,7 @@ export function ActivityChart() {
           strokeDasharray="3 3"
           stroke="var(--color-border)"
           vertical={false}
+          strokeOpacity={0.4}
         />
         <XAxis
           dataKey="date"
@@ -111,6 +112,7 @@ export function ActivityChart() {
           tickLine={false}
           tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
           dy={8}
+          padding={{ left: 10, right: 10 }}
         />
         <YAxis
           axisLine={false}
@@ -120,25 +122,31 @@ export function ActivityChart() {
         />
         <Tooltip
           content={<ChartTooltipContent />}
-          cursor={{ stroke: "var(--color-border)" }}
+          cursor={{
+            stroke: "var(--color-border)",
+            strokeWidth: 1,
+            strokeDasharray: "4 4",
+          }}
         />
         <Area
           type="monotone"
           dataKey="events"
           stroke="var(--color-chart-1)"
           strokeWidth={2}
+          strokeOpacity={0.8}
           fill="url(#gradEvents)"
           dot={false}
-          activeDot={{ r: 4, strokeWidth: 2, fill: "var(--color-card)" }}
+          activeDot={{ r: 4, strokeWidth: 0, fill: "var(--color-chart-1)" }}
         />
         <Area
           type="monotone"
           dataKey="messages"
           stroke="var(--color-chart-2)"
           strokeWidth={2}
+          strokeOpacity={0.8}
           fill="url(#gradMessages)"
           dot={false}
-          activeDot={{ r: 4, strokeWidth: 2, fill: "var(--color-card)" }}
+          activeDot={{ r: 4, strokeWidth: 0, fill: "var(--color-chart-2)" }}
         />
       </AreaChart>
     </ResponsiveContainer>

@@ -4,7 +4,6 @@ import type { NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isDashboard = path.startsWith("/dashboard");
-  const isAuthRoute = path.startsWith("/api/auth");
   const isLogin = path === "/login";
 
   // Get session token from cookies

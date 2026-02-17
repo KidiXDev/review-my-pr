@@ -37,11 +37,13 @@ export function SidebarNav() {
               href={item.href}
               className={cn(
                 buttonVariants({
-                  variant: isActive ? "secondary" : "ghost",
+                  variant: "ghost",
                   size: "sm",
                 }),
-                "justify-start gap-2 px-3",
-                isActive && "font-semibold text-foreground",
+                "justify-start gap-3 px-3 py-2.5 transition-all duration-200",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-[0_0_10px_rgba(34,197,94,0.15)] ring-1 ring-white/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5",
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -63,11 +65,13 @@ export function SidebarNav() {
               href={item.href}
               className={cn(
                 buttonVariants({
-                  variant: isActive ? "secondary" : "ghost",
+                  variant: "ghost",
                   size: "sm",
                 }),
-                "justify-start gap-2 px-3",
-                isActive && "text-foreground",
+                "justify-start gap-3 px-3 py-2.5 transition-all duration-200",
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-[0_0_10px_rgba(34,197,94,0.15)] ring-1 ring-white/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5",
               )}
             >
               <item.icon className="h-4 w-4" />

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/common/modal/searchable-select";
 import { toast } from "sonner";
-import { Loader2, Send, CheckCircle2 } from "lucide-react";
+import { Loader2, Send, CheckCircle2, MessageCircle } from "lucide-react";
 import { useSavedGroups } from "@/hooks/use-groups";
 import { useSendTestMessage } from "@/hooks/use-whatsapp";
 import { useDebounce } from "use-debounce";
@@ -41,16 +41,17 @@ export function TestMessageCard() {
   };
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="h-full border-white/5 bg-white/5 backdrop-blur-md relative overflow-hidden group">
       {sendMessage.isSuccess && (
-        <div className="absolute inset-x-0 top-0 h-0.5 bg-emerald-500 animate-in fade-in duration-500" />
+        <div className="absolute inset-x-0 top-0 h-0.5 bg-emerald-500 animate-in fade-in duration-500 z-20" />
       )}
-      <CardHeader className="pb-3">
+
+      <CardHeader className="relative z-10 pb-3">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Send className="h-4 w-4 text-muted-foreground" />
-              Send Test Message
+              <MessageCircle className="h-5 w-5 text-indigo-400" />
+              Test Integration
             </CardTitle>
             <CardDescription className="mt-1">
               Verify your bot can deliver to WhatsApp groups.
@@ -64,7 +65,8 @@ export function TestMessageCard() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="relative z-10 space-y-4">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Target Group</Label>
           <SearchableSelect
@@ -75,7 +77,7 @@ export function TestMessageCard() {
               label: g.name,
             }))}
             placeholder="Select a group"
-            className="flex-1 w-full"
+            className="flex-1 w-full bg-background/50 border-white/10"
             disabled={fetchingGroups}
             onSearchChange={setSearchQuery}
             searchValue={searchQuery}
@@ -88,12 +90,12 @@ export function TestMessageCard() {
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="text-sm"
+            className="text-sm bg-background/50 border-white/10 focus-visible:ring-indigo-500/50"
           />
         </div>
 
         <Button
-          className="w-full gap-2"
+          className="w-full gap-2 bg-indigo-600 hover:bg-indigo-500 text-white transition-all duration-300"
           onClick={sendTest}
           disabled={sendMessage.isPending || !selectedGroup}
         >
