@@ -17,7 +17,7 @@ LICENSE
 .github
 .vscode
 .agent
-drizzle
+
 .baileys_auth
 .wwebjs_auth
 .wwebjs_cache

@@ -25,6 +25,7 @@ RUN pnpm build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
+RUN apk add --no-cache curl
 WORKDIR /app
 
 ENV NODE_ENV production
@@ -39,6 +40,9 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 
 USER nextjs
 
