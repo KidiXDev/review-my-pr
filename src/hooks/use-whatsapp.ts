@@ -8,6 +8,7 @@ export interface WhatsAppStatus {
   isConnected: boolean;
   isReady: boolean;
   error?: string;
+  isExpired?: boolean;
 }
 
 export interface WaGroup {
@@ -89,6 +90,23 @@ export function useSaveWhatsAppGroup() {
     },
     onError: (error: AxiosError<{ error: string }>) => {
       toast.error(error.response?.data?.error || "Failed to save group");
+    },
+  });
+}
+
+export function useRetryWhatsApp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post("/whatsapp/retry");
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Retrying connection...");
+      queryClient.invalidateQueries({ queryKey: ["whatsapp", "status"] });
+    },
+    onError: (error: AxiosError<{ error: string }>) => {
+      toast.error(error.response?.data?.error || "Failed to retry connection");
     },
   });
 }

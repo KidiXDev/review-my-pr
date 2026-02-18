@@ -10,13 +10,16 @@ import {
   CheckCircle2,
   Copy,
   Plus,
+  RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useWhatsAppStatus,
   useWhatsAppGroups,
   useSaveWhatsAppGroup,
+  useRetryWhatsApp,
 } from "@/hooks/use-whatsapp";
+
 import { useRepos, useAddRepo } from "@/hooks/use-repos";
 import { QRCodeSVG } from "qrcode.react";
 import { Input } from "@/components/ui/input";
@@ -53,6 +56,7 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
     !!waStatus?.isConnected,
   );
   const saveGroupMutation = useSaveWhatsAppGroup();
+  const retryMutation = useRetryWhatsApp();
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
 
   // Determine WhatsApp readiness
@@ -231,7 +235,29 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center p-4 space-y-4">
-                      {waStatus?.qr ? (
+                      {waStatus?.isExpired ? (
+                        <div className="flex flex-col items-center gap-4 text-center">
+                          <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center ring-1 ring-amber-500/20">
+                            <RefreshCw className="h-8 w-8 text-amber-500" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="font-medium">QR Code Expired</p>
+                            <p className="text-sm text-muted-foreground max-w-xs">
+                              The connection attempt timed out. Click below to
+                              generate a new QR code.
+                            </p>
+                          </div>
+                          <Button
+                            onClick={() => retryMutation.mutate()}
+                            disabled={retryMutation.isPending}
+                          >
+                            {retryMutation.isPending && (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            )}
+                            Generate New QR
+                          </Button>
+                        </div>
+                      ) : waStatus?.qr ? (
                         <div className="p-4 bg-white rounded-xl shadow-sm border">
                           <QRCodeSVG value={waStatus.qr} size={200} />
                         </div>
@@ -241,10 +267,12 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
                           <p>Generating QR Code...</p>
                         </div>
                       )}
-                      <p className="text-sm text-center text-muted-foreground max-w-xs">
-                        Open WhatsApp on your phone, go to Linked Devices, and
-                        scan this code.
-                      </p>
+                      {!waStatus?.isExpired && (
+                        <p className="text-sm text-center text-muted-foreground max-w-xs">
+                          Open WhatsApp on your phone, go to Linked Devices, and
+                          scan this code.
+                        </p>
+                      )}
                     </div>
                   )}
                 </CardContent>

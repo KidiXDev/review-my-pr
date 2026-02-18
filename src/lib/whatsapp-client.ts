@@ -23,6 +23,8 @@ export class WhatsAppClient {
   private saveCreds: (() => Promise<void>) | null = null;
   private userId: string;
   private authDir: string;
+  private qrRetries: number = 0;
+  private readonly MAX_QR_RETRIES = 6; // About 2-3 minutes
 
   constructor(userId: string) {
     this.userId = userId;
@@ -85,7 +87,21 @@ export class WhatsAppClient {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
-          console.log(`QR Code received for user ${this.userId}`);
+          this.qrRetries++;
+          console.log(
+            `QR Code received for user ${this.userId} (Attempt ${this.qrRetries}/${this.MAX_QR_RETRIES})`,
+          );
+
+          if (this.qrRetries >= this.MAX_QR_RETRIES) {
+            console.log(
+              `QR refs attempts ended for user ${this.userId}, stopping connection`,
+            );
+            this.socket?.end(undefined);
+            this.qrCode = null;
+            publishUpdate(this.userId, "whatsapp:qr", { qr: null }); // Clear QR
+            return;
+          }
+
           this.qrCode = qr;
           publishUpdate(this.userId, "whatsapp:qr", { qr });
         }
@@ -93,7 +109,8 @@ export class WhatsAppClient {
         if (connection === "close") {
           const error = lastDisconnect?.error as Boom | undefined;
           const shouldReconnect =
-            error?.output?.statusCode !== DisconnectReason.loggedOut;
+            error?.output?.statusCode !== DisconnectReason.loggedOut &&
+            this.qrRetries < this.MAX_QR_RETRIES;
 
           console.log(
             `Connection closed for user ${this.userId} due to `,
@@ -116,6 +133,7 @@ export class WhatsAppClient {
           this.isConnected = true;
           this.isReady = true;
           this.qrCode = null;
+          this.qrRetries = 0;
 
           publishUpdate(this.userId, "whatsapp:status", {
             isConnected: true,
@@ -156,7 +174,16 @@ export class WhatsAppClient {
     return {
       isConnected: this.isConnected,
       isReady: this.isReady && !!this.socket,
+      isExpired: this.qrRetries >= this.MAX_QR_RETRIES,
     };
+  }
+
+  public async reload() {
+    console.log(`Reloading WhatsApp client for user ${this.userId}`);
+    this.qrRetries = 0;
+    this.qrCode = null;
+    await this.destroy();
+    await this.initialize();
   }
 
   public async getAllGroups(): Promise<GroupMetadata[]> {

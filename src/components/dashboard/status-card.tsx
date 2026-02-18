@@ -1,6 +1,7 @@
 "use client";
 
-import { useWhatsAppStatus } from "@/hooks/use-whatsapp";
+import { useWhatsAppStatus, useRetryWhatsApp } from "@/hooks/use-whatsapp";
+
 import {
   Card,
   CardContent,
@@ -15,6 +16,7 @@ import { QRCodeSVG } from "qrcode.react";
 
 export function StatusCard() {
   const { data: status, isLoading, refetch, isFetching } = useWhatsAppStatus();
+  const retryMutation = useRetryWhatsApp();
 
   if (isLoading || !status) {
     return (
@@ -94,6 +96,27 @@ export function StatusCard() {
                 Settings {">"} Linked Devices {">"} Link a Device
               </p>
             </div>
+          </div>
+        ) : !isConnected && status.isExpired ? (
+          <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-500">
+            <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center ring-1 ring-amber-500/20">
+              <RefreshCw className="h-8 w-8 text-amber-500" />
+            </div>
+            <div className="space-y-1 text-center">
+              <p className="font-medium">QR Code Expired</p>
+              <p className="text-sm text-muted-foreground max-w-[200px]">
+                The connection attempt timed out.
+              </p>
+            </div>
+            <Button
+              onClick={() => retryMutation.mutate()}
+              disabled={retryMutation.isPending}
+            >
+              {retryMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Generate New QR
+            </Button>
           </div>
         ) : !isConnected && !status.qr ? (
           <div className="flex flex-col items-center gap-3 text-center">
