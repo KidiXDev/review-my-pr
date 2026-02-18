@@ -1,0 +1,1 @@
+ALTER TABLE "github_repository" ADD COLUMN "detailed_date_language" text DEFAULT 'en' NOT NULL;

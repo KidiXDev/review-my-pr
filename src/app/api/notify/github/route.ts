@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import { DateTime } from "luxon";
 
 import { GithubWebhookPayload } from "@/types/github";
 
@@ -157,6 +158,7 @@ export async function POST(request: Request) {
 
     // 4. Resolve Template
     let templateText = repository.messageTemplate;
+    const detailedDateLanguage = repository.detailedDateLanguage || "en";
 
     if (!templateText) {
       // Fallback to global template
@@ -175,6 +177,19 @@ export async function POST(request: Request) {
     // 5. Construct Message with Macros
     let message = "";
     if (templateText) {
+      const now = DateTime.now().setZone("Asia/Jakarta");
+      const getDayStatus = (hour: number, lang: string) => {
+        const isId = lang === "id";
+        if (hour >= 0 && hour < 11) return isId ? "Pagi" : "Morning";
+        if (hour >= 11 && hour < 15) return isId ? "Siang" : "Afternoon";
+        if (hour >= 15 && hour < 18) return isId ? "Sore" : "Evening";
+        return isId ? "Malam" : "Night";
+      };
+
+      const dateStr = now.toFormat("dd-MM-yyyy");
+      const timeStr = now.toFormat("HH:mm");
+      const dayStatus = getDayStatus(now.hour, detailedDateLanguage);
+
       message = templateText
         .replace(/{{repo}}/g, repo)
         .replace(/{{title}}/g, title)
@@ -186,7 +201,11 @@ export async function POST(request: Request) {
         .replace(/{pr\.title}/g, title)
         .replace(/{pr\.author}/g, author)
         .replace(/{pr\.url}/g, url)
-        .replace(/{pr\.event}/g, event);
+        .replace(/{pr\.event}/g, event)
+        // Date macros
+        .replace(/{date\.date}/g, dateStr)
+        .replace(/{date\.time}/g, timeStr)
+        .replace(/{date\.day_status}/g, dayStatus);
     } else {
       // Default fallback
       message = `📢 *${repo}*: ${title}\n\n👤 ${author}\n🔗 ${url}`;

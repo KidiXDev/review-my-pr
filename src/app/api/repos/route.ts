@@ -121,6 +121,7 @@ const updateRepoSchema = z.object({
   allowedAuthors: z.array(z.string()).optional(),
   groupIds: z.array(z.string()).optional(),
   messageTemplate: z.string().optional(),
+  detailedDateLanguage: z.string().optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -138,6 +139,7 @@ export async function PATCH(request: Request) {
       allowedAuthors,
       groupIds,
       messageTemplate,
+      detailedDateLanguage,
       isActive,
     } = updateRepoSchema.parse(body);
 
@@ -157,6 +159,7 @@ export async function PATCH(request: Request) {
         allowedAuthors,
         groupIds,
         messageTemplate,
+        detailedDateLanguage,
         isActive,
       })
       .where(eq(githubRepositories.id, id));

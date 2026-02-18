@@ -15,6 +15,13 @@
       "when": 1771407336032,
       "tag": "0001_thick_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1771409888409,
+      "tag": "0002_dapper_lady_vermin",
+      "breakpoints": true
     }
   ]
 }

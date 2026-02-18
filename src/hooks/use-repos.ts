@@ -13,6 +13,7 @@ export interface Repository {
   allowedAuthors: string[] | null;
   groupIds: string[] | null;
   messageTemplate: string | null;
+  detailedDateLanguage: string | null;
 }
 
 export function useRepos() {
@@ -65,6 +66,7 @@ export interface UpdateRepoSettingsParams {
   allowedAuthors: string[] | null;
   groupIds: string[] | null;
   messageTemplate: string | null;
+  detailedDateLanguage: string | null;
   isActive: boolean | null;
 }
 

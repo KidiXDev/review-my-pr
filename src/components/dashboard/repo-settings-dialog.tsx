@@ -35,12 +35,20 @@ import {
   Info,
   X,
   UserCheck,
+  Languages,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSavedGroups } from "@/hooks/use-groups";
 import { useUpdateRepoSettings } from "@/hooks/use-repos";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RepoSettingsDialogProps {
   repo: {
@@ -50,6 +58,7 @@ interface RepoSettingsDialogProps {
     allowedAuthors: string[] | null;
     groupIds: string[] | null;
     messageTemplate: string | null;
+    detailedDateLanguage: string | null;
     isActive: boolean;
   };
   open: boolean;
@@ -171,6 +180,7 @@ export function RepoSettingsDialog({
       allowedAuthors: repo.allowedAuthors || [],
       groupIds: repo.groupIds || [],
       messageTemplate: repo.messageTemplate || "",
+      detailedDateLanguage: repo.detailedDateLanguage || "en",
       isActive: repo.isActive,
     } as RepoSettingsFormValues,
     validators: {
@@ -181,6 +191,7 @@ export function RepoSettingsDialog({
       const authors = value.allowedAuthors || [];
       const grps = value.groupIds || [];
       const tpl = value.messageTemplate || "";
+      const lang = value.detailedDateLanguage || "en";
       const active = value.isActive ?? true;
 
       await updateSettingsMutation.mutateAsync({
@@ -189,6 +200,7 @@ export function RepoSettingsDialog({
         allowedAuthors: authors.length > 0 ? authors : null,
         groupIds: grps,
         messageTemplate: tpl || null,
+        detailedDateLanguage: lang,
         isActive: active,
       });
       onOpenChange(false);
@@ -213,9 +225,11 @@ export function RepoSettingsDialog({
       form.setFieldValue("allowedEvents", migrateEvents(repo.allowedEvents));
       form.setFieldValue("allowedAuthors", repo.allowedAuthors || []);
       form.setFieldValue("groupIds", repo.groupIds || []);
-      form.setFieldValue("allowedAuthors", repo.allowedAuthors || []);
-      form.setFieldValue("groupIds", repo.groupIds || []);
       form.setFieldValue("messageTemplate", repo.messageTemplate || "");
+      form.setFieldValue(
+        "detailedDateLanguage",
+        repo.detailedDateLanguage || "en",
+      );
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTrackedGroupIds(repo.groupIds || []);
@@ -514,6 +528,9 @@ export function RepoSettingsDialog({
                           { m: "{pr.url}", d: "URL" },
                           { m: "{pr.event}", d: "Event" },
                           { m: "@number", d: "Mention" },
+                          { m: "{date.date}", d: "Date (D-M-Y)" },
+                          { m: "{date.time}", d: "Time (HH:mm)" },
+                          { m: "{date.day_status}", d: "Day Status" },
                         ].map((macro) => (
                           <div key={macro.m} className="flex flex-col gap-0.5">
                             <code className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded w-fit">
@@ -531,6 +548,36 @@ export function RepoSettingsDialog({
                 </Field>
               );
             }}
+          </form.Field>
+
+          {/* Detailed Date Language */}
+          <form.Field name="detailedDateLanguage">
+            {(field) => (
+              <Field>
+                <div className="flex items-center gap-2 mb-1">
+                  <Languages className="w-4 h-4 text-zinc-400" />
+                  <FieldLabel className="text-base font-semibold">
+                    Date Language
+                  </FieldLabel>
+                </div>
+                <Select
+                  value={field.state.value || "en"}
+                  onValueChange={field.handleChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English (Morning, etc.)</SelectItem>
+                    <SelectItem value="id">Indonesia (Pagi, etc.)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FieldDescription className="flex items-center gap-1.5 mt-2">
+                  <Info className="w-3 h-3" />
+                  Controls the language for {"{date.day_status}"} macro.
+                </FieldDescription>
+              </Field>
+            )}
           </form.Field>
 
           {/* Active Status */}
