@@ -52,6 +52,7 @@ export const githubRepositories = pgTable("github_repository", {
   repoName: text("repo_name").notNull(), // owner/name
   apiToken: text("api_token").notNull(),
   allowedEvents: text("allowed_events").array(), // Array of event types
+  allowedAuthors: text("allowed_authors").array(), // Array of allowed authors
   groupIds: text("group_ids").array(), // Array of WhatsApp group IDs
   messageTemplate: text("message_template"), // Custom message template
   isActive: boolean("is_active").default(true).notNull(),

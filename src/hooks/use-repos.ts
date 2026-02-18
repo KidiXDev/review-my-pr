@@ -10,6 +10,7 @@ export interface Repository {
   isActive: boolean;
   createdAt: string;
   allowedEvents: string[] | null;
+  allowedAuthors: string[] | null;
   groupIds: string[] | null;
   messageTemplate: string | null;
 }
@@ -61,6 +62,7 @@ export function useDeleteRepo() {
 export interface UpdateRepoSettingsParams {
   id: string;
   allowedEvents: string[] | null;
+  allowedAuthors: string[] | null;
   groupIds: string[] | null;
   messageTemplate: string | null;
 }

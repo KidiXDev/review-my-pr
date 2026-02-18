@@ -10,44 +10,14 @@ import {
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
-interface WebhookPayload {
-  token?: string;
-  event?: string;
-  repo?: string;
-  title?: string;
-  author?: string;
-  url?: string;
-  action?: string;
-  repository?: {
-    full_name?: string;
-  };
-  sender?: {
-    login?: string;
-  };
-  pull_request?: {
-    title?: string;
-    html_url?: string;
-    merged?: boolean;
-  };
-  issue?: {
-    title?: string;
-    html_url?: string;
-  };
-  head_commit?: {
-    message?: string;
-  };
-  compare?: string;
-  pusher?: {
-    name?: string;
-  };
-}
+import { GithubWebhookPayload } from "@/types/github";
 
 export async function POST(request: Request) {
   try {
     const urlObj = new URL(request.url);
     const urlToken = urlObj.searchParams.get("token");
 
-    let body: WebhookPayload;
+    let body: GithubWebhookPayload;
     try {
       body = await request.json();
     } catch {
@@ -151,6 +121,17 @@ export async function POST(request: Request) {
     ) {
       console.log(`Event ${event} not in allowlist for ${repo}`);
       return NextResponse.json({ message: "Event ignored by allowlist" });
+    }
+
+    // 2.1. Author Allowlist Check
+    const allowedAuthors = repository.allowedAuthors;
+    if (
+      allowedAuthors &&
+      allowedAuthors.length > 0 &&
+      (!author || !allowedAuthors.includes(author))
+    ) {
+      console.log(`Author ${author} not in allowlist for ${repo}`);
+      return NextResponse.json({ message: "Author ignored by allowlist" });
     }
 
     // 3. Resolve Target Groups

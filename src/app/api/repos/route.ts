@@ -118,6 +118,7 @@ export async function DELETE(request: Request) {
 const updateRepoSchema = z.object({
   id: z.string(),
   allowedEvents: z.array(z.string()).optional(),
+  allowedAuthors: z.array(z.string()).optional(),
   groupIds: z.array(z.string()).optional(),
   messageTemplate: z.string().optional(),
   isActive: z.boolean().optional(),
@@ -131,8 +132,14 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, allowedEvents, groupIds, messageTemplate, isActive } =
-      updateRepoSchema.parse(body);
+    const {
+      id,
+      allowedEvents,
+      allowedAuthors,
+      groupIds,
+      messageTemplate,
+      isActive,
+    } = updateRepoSchema.parse(body);
 
     const [repo] = await db
       .select({ userId: githubRepositories.userId })
@@ -147,6 +154,7 @@ export async function PATCH(request: Request) {
       .update(githubRepositories)
       .set({
         allowedEvents,
+        allowedAuthors,
         groupIds,
         messageTemplate,
         isActive,

@@ -33,16 +33,20 @@ import {
   Users,
   MessageSquare,
   Info,
+  X,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSavedGroups } from "@/hooks/use-groups";
 import { useUpdateRepoSettings } from "@/hooks/use-repos";
+import { Badge } from "@/components/ui/badge";
 
 interface RepoSettingsDialogProps {
   repo: {
     id: string;
     repoName: string;
     allowedEvents: string[] | null;
+    allowedAuthors: string[] | null;
     groupIds: string[] | null;
     messageTemplate: string | null;
   };
@@ -71,6 +75,81 @@ const migrateEvents = (events: string[] | null) => {
   return events.map((e) => map[e] || e);
 };
 
+interface AllowedAuthorsListInputProps {
+  value: string[];
+  onChange: (value: string[]) => void;
+  isInvalid?: boolean;
+  errors?: ({ message?: string } | undefined)[];
+}
+
+function AllowedAuthorsListInput({
+  value,
+  onChange,
+  isInvalid,
+  errors,
+}: AllowedAuthorsListInputProps) {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const val = inputValue.trim();
+      if (val && !value.includes(val)) {
+        onChange([...value, val]);
+        setInputValue("");
+      }
+    }
+  };
+
+  const removeAuthor = (authorToRemove: string) => {
+    onChange(value.filter((a) => a !== authorToRemove));
+  };
+
+  return (
+    <Field data-invalid={isInvalid}>
+      <div className="flex items-center gap-2 mb-1">
+        <UserCheck className="w-4 h-4 text-zinc-400" />
+        <FieldLabel className="text-base font-semibold">
+          Allowed Authors
+        </FieldLabel>
+      </div>
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 min-h-12">
+          {value.map((author) => (
+            <Badge
+              key={author}
+              variant="secondary"
+              className="flex items-center gap-1 pr-1 bg-white dark:bg-zinc-800 shadow-sm border-zinc-200 dark:border-zinc-700"
+            >
+              {author}
+              <button
+                type="button"
+                onClick={() => removeAuthor(author)}
+                className="p-0.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-full transition-colors"
+              >
+                <X className="w-3 h-3 text-zinc-500" />
+              </button>
+            </Badge>
+          ))}
+          <Input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type username & press Enter..."
+            className="flex-1 min-w-[150px] border-none bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto placeholder:text-zinc-400"
+          />
+        </div>
+      </div>
+      <FieldDescription className="flex items-center gap-1.5 mt-2">
+        <Info className="w-3 h-3" />
+        Only notifications from these authors will be sent. Leave empty to allow
+        all.
+      </FieldDescription>
+      {isInvalid && errors && <FieldError errors={errors} />}
+    </Field>
+  );
+}
+
 export function RepoSettingsDialog({
   repo,
   open,
@@ -87,6 +166,7 @@ export function RepoSettingsDialog({
   const form = useForm({
     defaultValues: {
       allowedEvents: migrateEvents(repo.allowedEvents),
+      allowedAuthors: repo.allowedAuthors || [],
       groupIds: repo.groupIds || [],
       messageTemplate: repo.messageTemplate || "",
     } as RepoSettingsFormValues,
@@ -95,12 +175,14 @@ export function RepoSettingsDialog({
     },
     onSubmit: async ({ value }) => {
       const allowed = value.allowedEvents || [];
+      const authors = value.allowedAuthors || [];
       const grps = value.groupIds || [];
       const tpl = value.messageTemplate || "";
 
       await updateSettingsMutation.mutateAsync({
         id: repo.id,
         allowedEvents: allowed.length > 0 ? allowed : null,
+        allowedAuthors: authors.length > 0 ? authors : null,
         groupIds: grps,
         messageTemplate: tpl || null,
       });
@@ -124,6 +206,9 @@ export function RepoSettingsDialog({
       form.reset();
       // Explicitly set values to ensure migration applies if defaultValues are stale
       form.setFieldValue("allowedEvents", migrateEvents(repo.allowedEvents));
+      form.setFieldValue("allowedAuthors", repo.allowedAuthors || []);
+      form.setFieldValue("groupIds", repo.groupIds || []);
+      form.setFieldValue("allowedAuthors", repo.allowedAuthors || []);
       form.setFieldValue("groupIds", repo.groupIds || []);
       form.setFieldValue("messageTemplate", repo.messageTemplate || "");
 
@@ -260,6 +345,20 @@ export function RepoSettingsDialog({
                 </Field>
               );
             }}
+          </form.Field>
+
+          {/* Allowed Authors */}
+          <form.Field name="allowedAuthors">
+            {(field) => (
+              <AllowedAuthorsListInput
+                value={field.state.value || []}
+                onChange={(val) => field.handleChange(val)}
+                isInvalid={
+                  field.state.meta.isTouched && !field.state.meta.isValid
+                }
+                errors={field.state.meta.errors}
+              />
+            )}
           </form.Field>
 
           {/* Target Groups */}

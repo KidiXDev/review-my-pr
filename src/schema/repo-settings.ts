@@ -3,6 +3,7 @@ export const repoSettingsSchema = z.object({
   allowedEvents: z
     .array(z.string())
     .nonempty("Please select at least one event"),
+  allowedAuthors: z.array(z.string()).optional(),
   groupIds: z.array(z.string()).nonempty("Please select at least one group"),
   messageTemplate: z
     .string()
