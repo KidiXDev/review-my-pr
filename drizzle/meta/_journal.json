@@ -8,6 +8,13 @@
       "when": 1771317103533,
       "tag": "0000_daily_slapstick",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771407336032,
+      "tag": "0001_thick_gargoyle",
+      "breakpoints": true
     }
   ]
 }
