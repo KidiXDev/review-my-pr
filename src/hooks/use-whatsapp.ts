@@ -14,6 +14,7 @@ export interface WaGroup {
   id: string;
   name: string;
   participantCount: number;
+  isImported?: boolean;
 }
 
 export function useWhatsAppStatus() {

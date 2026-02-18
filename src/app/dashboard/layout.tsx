@@ -9,12 +9,62 @@ import { DashboardBreadcrumb } from "@/components/dashboard/dashboard-breadcrumb
 import { GlobalSearch } from "@/components/dashboard/global-search";
 import { Notifications } from "@/components/dashboard/notifications";
 import { RealtimeListener } from "@/components/dashboard/realtime-listener";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { db } from "@/index";
+import { user } from "@/db/schema";
+import { eq, count } from "drizzle-orm";
+import { githubRepositories, whatsappSessions } from "@/db/schema";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Fetch fresh user data from DB to check onboarding status
+  const dbUser = await db.query.user.findFirst({
+    where: eq(user.id, session.user.id),
+  });
+
+  // Onboarding Check with Backward Compatibility
+  if (dbUser && !dbUser.onboardingCompleted) {
+    // Check if user has connected repos
+    const [repoCount] = await db
+      .select({ count: count() })
+      .from(githubRepositories)
+      .where(eq(githubRepositories.userId, session.user.id));
+
+    // Check if user has connected whatsapp (any session with isConnected=true)
+    const [waSession] = await db
+      .select({ count: count() })
+      .from(whatsappSessions)
+      .where(eq(whatsappSessions.userId, session.user.id));
+
+    // Simple heuristic: if they have repos OR a WA session start, assume onboarded
+    // Using simple count check.
+    const hasHistory =
+      (repoCount?.count ?? 0) > 0 || (waSession?.count ?? 0) > 0;
+
+    if (hasHistory) {
+      // Auto-mark as completed
+      await db
+        .update(user)
+        .set({ onboardingCompleted: true })
+        .where(eq(user.id, session.user.id));
+    } else {
+      redirect("/onboarding");
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* Sidebar - Desktop */}

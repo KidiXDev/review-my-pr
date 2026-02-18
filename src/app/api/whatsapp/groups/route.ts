@@ -29,10 +29,19 @@ export async function GET() {
 
     const groups = await client.getAllGroups();
 
+    // Fetch already imported groups from DB
+    const importedGroups = await db.query.whatsappGroups.findMany({
+      where: (table, { eq, and }) =>
+        and(eq(table.userId, userId), eq(table.isActive, true)),
+    });
+
+    const importedGroupIds = new Set(importedGroups.map((g) => g.groupId));
+
     const formattedGroups = groups.map((g) => ({
       id: g.id,
       name: g.subject,
       participantCount: g.participants.length,
+      isImported: importedGroupIds.has(g.id),
     }));
 
     return NextResponse.json(formattedGroups);
