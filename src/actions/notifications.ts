@@ -3,10 +3,10 @@
 import { db } from "@/index";
 import { notifications } from "@/db/notification-schema";
 import { eq, desc, and } from "drizzle-orm";
-import redis from "@/lib/redis";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { type NotificationType } from "@/types/notifications";
+import { publishUpdate } from "@/lib/pubsub";
 
 export async function getNotifications() {
   const session = await auth.api.getSession({
@@ -84,9 +84,7 @@ export async function triggerNotification(
     })
     .returning();
 
-  // 2. Publish to Redis
-  const channel = `user:notifications:${userId}`;
-  await redis.publish(channel, JSON.stringify(newNotification));
+  await publishUpdate(userId, "notification", newNotification);
 
   return newNotification;
 }

@@ -223,9 +223,10 @@ export function RepoSettingsDialog({
   }, [open, repo, form]);
 
   const filteredGroups = useMemo(() => {
-    if (!groupSearch) return groups;
+    const activeGroups = groups.filter((g) => g.isActive);
+    if (!groupSearch) return activeGroups;
     const search = groupSearch.toLowerCase();
-    return groups.filter(
+    return activeGroups.filter(
       (g) =>
         g.name.toLowerCase().includes(search) ||
         g.groupId.toLowerCase().includes(search),

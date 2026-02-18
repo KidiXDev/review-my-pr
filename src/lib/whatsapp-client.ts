@@ -12,6 +12,7 @@ import pino from "pino";
 import { Boom } from "@hapi/boom";
 import fs from "fs";
 import path from "path";
+import { publishUpdate } from "./pubsub";
 
 export class WhatsAppClient {
   private socket: WASocket | null = null;
@@ -86,6 +87,7 @@ export class WhatsAppClient {
         if (qr) {
           console.log(`QR Code received for user ${this.userId}`);
           this.qrCode = qr;
+          publishUpdate(this.userId, "whatsapp:qr", { qr });
         }
 
         if (connection === "close") {
@@ -101,6 +103,10 @@ export class WhatsAppClient {
           );
           this.isConnected = false;
           this.isReady = false;
+          publishUpdate(this.userId, "whatsapp:status", {
+            isConnected: false,
+            isReady: false,
+          });
           // reconnect if not logged out
           if (shouldReconnect) {
             this.connectToWhatsApp();
@@ -110,6 +116,11 @@ export class WhatsAppClient {
           this.isConnected = true;
           this.isReady = true;
           this.qrCode = null;
+
+          publishUpdate(this.userId, "whatsapp:status", {
+            isConnected: true,
+            isReady: true,
+          });
 
           // Trigger internal notification for the user
           import("@/actions/notifications").then(

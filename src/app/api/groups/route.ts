@@ -3,6 +3,7 @@ import { db } from "@/index";
 import { whatsappGroups, githubRepositories } from "@/db/schema";
 import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { getRequiredSession } from "@/lib/get-session";
+import { publishUpdate } from "@/lib/pubsub";
 
 export async function GET(request: Request) {
   const session = await getRequiredSession();
@@ -119,6 +120,11 @@ export async function PATCH(request: Request) {
       .update(whatsappGroups)
       .set({ isActive })
       .where(eq(whatsappGroups.id, group.id));
+
+    await publishUpdate(session.user.id, "group:updated", {
+      groupId,
+      isActive,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DashboardBreadcrumb } from "@/components/dashboard/dashboard-breadcrumb";
 import { GlobalSearch } from "@/components/dashboard/global-search";
 import { Notifications } from "@/components/dashboard/notifications";
+import { RealtimeListener } from "@/components/dashboard/realtime-listener";
 
 export default function DashboardLayout({
   children,
@@ -104,6 +105,7 @@ export default function DashboardLayout({
           </div>
         </ScrollArea>
       </main>
+      <RealtimeListener />
     </div>
   );
 }
