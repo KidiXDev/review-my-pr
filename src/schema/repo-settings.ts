@@ -9,6 +9,7 @@ export const repoSettingsSchema = z.object({
     .string()
     .max(500, "Message template must not be longer than 500 characters.")
     .nonempty("Message template cannot be empty"),
+  isActive: z.boolean().optional(),
 });
 
 export type RepoSettingsFormValues = z.infer<typeof repoSettingsSchema>;

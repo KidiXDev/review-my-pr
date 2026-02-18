@@ -65,6 +65,7 @@ export interface UpdateRepoSettingsParams {
   allowedAuthors: string[] | null;
   groupIds: string[] | null;
   messageTemplate: string | null;
+  isActive: boolean | null;
 }
 
 export function useUpdateRepoSettings() {

@@ -26,8 +26,9 @@ import {
   useSaveWhatsAppGroup,
   WaGroup,
 } from "@/hooks/use-whatsapp";
-import { useSavedGroups } from "@/hooks/use-groups";
+import { useSavedGroups, useUpdateGroup } from "@/hooks/use-groups";
 import { useDebounce } from "use-debounce";
+import { Switch } from "@/components/ui/switch";
 
 import { DashboardHeader } from "./dashboard-header";
 import {
@@ -52,6 +53,7 @@ export function GroupsClient() {
   } = useWhatsAppGroups(false);
 
   const saveGroupMutation = useSaveWhatsAppGroup();
+  const updateGroupMutation = useUpdateGroup();
 
   const handleSyncClick = () => {
     fetchWaGroups();
@@ -207,13 +209,33 @@ export function GroupsClient() {
                       {group.groupId}
                     </TableCell>
                     <TableCell>
-                      {group.isActive ? (
-                        <Badge variant="default" className="bg-green-600">
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">Inactive</Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={group.isActive}
+                          onCheckedChange={async (checked) => {
+                            await updateGroupMutation.mutateAsync({
+                              groupId: group.groupId,
+                              isActive: checked,
+                            });
+                          }}
+                          disabled={
+                            updateGroupMutation.isPending ||
+                            (group.isActive && (group.usageCount || 0) > 0)
+                          }
+                          title={
+                            group.isActive && (group.usageCount || 0) > 0
+                              ? "Cannot deactivate group used in repositories"
+                              : "Toggle status"
+                          }
+                        />
+                        {group.isActive ? (
+                          <Badge variant="default" className="bg-green-600">
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {new Date(group.createdAt).toLocaleDateString()}

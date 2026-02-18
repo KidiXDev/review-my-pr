@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { useSavedGroups } from "@/hooks/use-groups";
 import { useUpdateRepoSettings } from "@/hooks/use-repos";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 interface RepoSettingsDialogProps {
   repo: {
@@ -49,6 +50,7 @@ interface RepoSettingsDialogProps {
     allowedAuthors: string[] | null;
     groupIds: string[] | null;
     messageTemplate: string | null;
+    isActive: boolean;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -169,6 +171,7 @@ export function RepoSettingsDialog({
       allowedAuthors: repo.allowedAuthors || [],
       groupIds: repo.groupIds || [],
       messageTemplate: repo.messageTemplate || "",
+      isActive: repo.isActive,
     } as RepoSettingsFormValues,
     validators: {
       onSubmit: repoSettingsSchema,
@@ -178,6 +181,7 @@ export function RepoSettingsDialog({
       const authors = value.allowedAuthors || [];
       const grps = value.groupIds || [];
       const tpl = value.messageTemplate || "";
+      const active = value.isActive ?? true;
 
       await updateSettingsMutation.mutateAsync({
         id: repo.id,
@@ -185,6 +189,7 @@ export function RepoSettingsDialog({
         allowedAuthors: authors.length > 0 ? authors : null,
         groupIds: grps,
         messageTemplate: tpl || null,
+        isActive: active,
       });
       onOpenChange(false);
       setGroupSearch("");
@@ -525,6 +530,26 @@ export function RepoSettingsDialog({
                 </Field>
               );
             }}
+          </form.Field>
+
+          {/* Active Status */}
+          <form.Field name="isActive">
+            {(field) => (
+              <div className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                <div className="space-y-0.5">
+                  <FieldLabel className="text-base font-semibold">
+                    Active Status
+                  </FieldLabel>
+                  <FieldDescription>
+                    Enable or disable notifications for this repository.
+                  </FieldDescription>
+                </div>
+                <Switch
+                  checked={field.state.value}
+                  onCheckedChange={field.handleChange}
+                />
+              </div>
+            )}
           </form.Field>
         </FieldGroup>
       </form>
