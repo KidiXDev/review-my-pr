@@ -6,7 +6,7 @@ const redisClientSingleton = () => {
     host: process.env.REDIS_HOST,
     password: process.env.REDIS_PASSWORD,
     db: Number(process.env.REDIS_DB),
-    keyPrefix: "mockify-pro:",
+    keyPrefix: "review-my-pr:",
   });
 };
 
