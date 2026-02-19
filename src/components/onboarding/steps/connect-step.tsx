@@ -11,6 +11,7 @@ import {
   Copy,
   Plus,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -18,19 +19,26 @@ import {
   useWhatsAppGroups,
   useSaveWhatsAppGroup,
   useRetryWhatsApp,
+  WaGroup,
 } from "@/hooks/use-whatsapp";
 
 import { useRepos, useAddRepo } from "@/hooks/use-repos";
 import { QRCodeSVG } from "qrcode.react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -57,7 +65,8 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
   );
   const saveGroupMutation = useSaveWhatsAppGroup();
   const retryMutation = useRetryWhatsApp();
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importSearchQuery, setImportSearchQuery] = useState("");
 
   // Determine WhatsApp readiness
   const isWhatsAppConnected = !!waStatus?.isConnected;
@@ -69,18 +78,14 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
   const addRepoMutation = useAddRepo();
   const [repoName, setRepoName] = useState("");
 
-  const handleSaveGroup = async () => {
-    if (!selectedGroupId) return;
-    const group = waGroups.find((g) => g.id === selectedGroupId);
-    if (!group) return;
-
+  const handleSaveGroup = async (group: WaGroup) => {
     try {
       await saveGroupMutation.mutateAsync({
         groupId: group.id,
         name: group.name,
       });
       toast.success("WhatsApp group connected!");
-      setSelectedGroupId(""); // Reset selection
+      setImportDialogOpen(false);
     } catch (error) {
       console.error(error);
     }
@@ -192,44 +197,144 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
                         </div>
                       )}
 
-                      <div className="space-y-2">
-                        <Label>Select Group to Import</Label>
-                        <div className="flex gap-2">
-                          <Select
-                            value={selectedGroupId}
-                            onValueChange={setSelectedGroupId}
-                            disabled={groupsLoading}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label>WhatsApp Groups</Label>
+                          <Dialog
+                            open={importDialogOpen}
+                            onOpenChange={setImportDialogOpen}
                           >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a group..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {waGroups
-                                .filter((g) => !g.isImported)
-                                .map((group) => (
-                                  <SelectItem key={group.id} value={group.id}>
-                                    {group.name} ({group.participantCount}{" "}
-                                    members)
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={handleSaveGroup}
-                            disabled={
-                              !selectedGroupId || saveGroupMutation.isPending
-                            }
-                          >
-                            {saveGroupMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              "Import"
-                            )}
-                          </Button>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={groupsLoading}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Import Group
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                              <DialogHeader>
+                                <DialogTitle>
+                                  Select Group to Import
+                                </DialogTitle>
+                                <div className="pt-2">
+                                  <InputGroup>
+                                    <InputGroupAddon>
+                                      <Search className="h-4 w-4" />
+                                    </InputGroupAddon>
+                                    <InputGroupInput
+                                      placeholder="Search WhatsApp groups..."
+                                      value={importSearchQuery}
+                                      onChange={(e) =>
+                                        setImportSearchQuery(e.target.value)
+                                      }
+                                    />
+                                  </InputGroup>
+                                </div>
+                              </DialogHeader>
+                              <div className="flex-1 overflow-hidden">
+                                {groupsLoading ? (
+                                  <div className="flex justify-center p-8">
+                                    <Loader2 className="h-8 w-8 animate-spin" />
+                                  </div>
+                                ) : (
+                                  <ScrollArea className="h-[400px] pr-4">
+                                    <div className="space-y-2">
+                                      {waGroups
+                                        .filter((g) => !g.isImported)
+                                        .filter((g) =>
+                                          g.name
+                                            .toLowerCase()
+                                            .includes(
+                                              importSearchQuery.toLowerCase(),
+                                            ),
+                                        )
+                                        .map((group) => {
+                                          const isSaving =
+                                            saveGroupMutation.isPending &&
+                                            saveGroupMutation.variables
+                                              ?.groupId === group.id;
+
+                                          return (
+                                            <div
+                                              key={group.id}
+                                              className="flex items-center justify-between p-3 border rounded-lg bg-card text-card-foreground"
+                                            >
+                                              <div>
+                                                <p className="font-medium">
+                                                  {group.name}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                  {group.participantCount}{" "}
+                                                  participants
+                                                </p>
+                                              </div>
+                                              <Button
+                                                size="sm"
+                                                onClick={() =>
+                                                  handleSaveGroup(group)
+                                                }
+                                                disabled={isSaving}
+                                              >
+                                                {isSaving ? (
+                                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                  "Import"
+                                                )}
+                                              </Button>
+                                            </div>
+                                          );
+                                        })}
+                                      {waGroups.filter((g) => !g.isImported)
+                                        .length === 0 && (
+                                        <p className="text-center text-muted-foreground p-4">
+                                          No new groups found.
+                                        </p>
+                                      )}
+                                    </div>
+                                  </ScrollArea>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
+
+                        {waGroups.some((g) => g.isImported) ? (
+                          <div className="space-y-2">
+                            {waGroups
+                              .filter((g) => g.isImported)
+                              .map((group) => (
+                                <div
+                                  key={group.id}
+                                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <MessageCircle className="w-4 h-4 text-green-500" />
+                                    <span className="font-medium">
+                                      {group.name}
+                                    </span>
+                                  </div>
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-green-500/10 text-green-600 border-green-500/20"
+                                  >
+                                    Connected
+                                  </Badge>
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground text-center py-8 bg-muted/30 rounded-lg border border-dashed">
+                            No groups connected yet. Click &quot;Import
+                            Group&quot; to start.
+                          </div>
+                        )}
+
                         <p className="text-xs text-muted-foreground">
-                          Select a group where the bot will send notifications.
-                          Must import at least one group to proceed.
+                          Connect at least one group where the bot will send
+                          notifications to proceed.
                         </p>
                       </div>
                     </div>
