@@ -87,6 +87,7 @@ export function useSaveWhatsAppGroup() {
     onSuccess: () => {
       toast.success("Group saved");
       queryClient.invalidateQueries({ queryKey: ["groups", "saved"] });
+      queryClient.invalidateQueries({ queryKey: ["whatsapp", "groups"] });
     },
     onError: (error: AxiosError<{ error: string }>) => {
       toast.error(error.response?.data?.error || "Failed to save group");
