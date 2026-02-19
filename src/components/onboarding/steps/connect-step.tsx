@@ -186,7 +186,7 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
                         <div className="font-medium">WhatsApp Connected</div>
                       </div>
 
-                      {hasImportedGroup && (
+                      {/* {hasImportedGroup && (
                         <div className="bg-blue-500/10 text-blue-600 p-4 rounded-lg flex items-center gap-3">
                           <CheckCircle2 className="w-6 h-6" />
                           <div className="font-medium">
@@ -195,7 +195,7 @@ export function ConnectStep({ onNext, onBack }: StepProps) {
                             active)
                           </div>
                         </div>
-                      )}
+                      )} */}
 
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
