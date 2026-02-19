@@ -62,8 +62,8 @@ export function useDeleteRepo() {
 
 export interface UpdateRepoSettingsParams {
   id: string;
-  allowedEvents: string[] | null;
-  allowedAuthors: string[] | null;
+  allowedEvents: string[];
+  allowedAuthors: string[];
   groupIds: string[] | null;
   messageTemplate: string | null;
   detailedDateLanguage: string | null;

@@ -196,8 +196,8 @@ export function RepoSettingsDialog({
 
       await updateSettingsMutation.mutateAsync({
         id: repo.id,
-        allowedEvents: allowed.length > 0 ? allowed : null,
-        allowedAuthors: authors.length > 0 ? authors : null,
+        allowedEvents: allowed,
+        allowedAuthors: authors,
         groupIds: grps,
         messageTemplate: tpl || null,
         detailedDateLanguage: lang,
